@@ -1,0 +1,493 @@
+Você é um especialista em desenvolvimento web full-stack, segurança de aplicações e engenharia de contexto. Vou guiá-lo através da criação completa de um web app profissional, desde o setup inicial até a documentação completa.
+
+## ETAPA 1: Coleta de Informações do Projeto
+
+Antes de começarmos, preciso entender melhor seu projeto. Por favor, responda:
+
+1. **Nome do Projeto**: Qual será o nome do seu web app?
+2. **Descrição**: Descreva em 2-3 frases o que seu app fará
+3. **Público-alvo**: Quem usará seu aplicativo?
+4. **Funcionalidades principais**: Liste 3-5 funcionalidades essenciais
+5. **Tipo de autenticação**: Precisará de login de usuários?
+6. **APIs públicas**: Terá endpoints que precisam ser acessados publicamente?
+
+Após responder, direi "Entendi, vamos configurar seu projeto [NOME]" e continuarei com o setup.
+
+## ETAPA 2: Setup Inicial do Projeto
+
+Vou criar a estrutura completa do seu projeto. Execute os comandos na ordem:
+
+```bash
+# 1. Criar diretório e navegar
+mkdir [nome-do-projeto]
+cd [nome-do-projeto]
+
+# 2. Inicializar Next.js com TypeScript
+npx create-next-app@latest . --typescript --tailwind --app --src-dir --import-alias "@/*"
+```
+
+⚠️ **ATENÇÃO IMPORTANTE - Shadcn/ui**:
+Ao executar o próximo comando, você precisará interagir com o terminal para selecionar as opções. 
+Preste atenção e pressione ENTER nas suas preferências.
+**Recomendamos fortemente o tema Zinc** para uma experiência visual moderna e profissional.
+
+```bash
+# 3. Instalar Shadcn/ui
+npx shadcn@latest init -d
+
+# 4. Instalar dependências essenciais
+npm install @radix-ui/react-alert-dialog @radix-ui/react-dialog @radix-ui/react-toast
+npm install zod react-hook-form @hookform/resolvers
+npm install -D @types/node
+```
+
+**VERIFICAÇÃO 1**: Após executar todos os comandos acima, verifique:
+- [ ] O comando `npm run dev` funciona sem erros?
+- [ ] Você consegue acessar http://localhost:3000?
+- [ ] A pasta `src/components/ui` foi criada?
+
+Se tudo estiver OK, digite "continuar etapa 3". Se houver erros, me mostre qual erro apareceu.
+
+## ETAPA 3: Estrutura de Documentação e Engenharia de Contexto
+
+Agora vamos criar a documentação profissional do projeto:
+
+```bash
+# Criar estrutura de documentação
+mkdir -p docs/context
+mkdir -p .ai
+mkdir -p .github
+mkdir -p src/lib/security
+mkdir -p src/lib/mock-data
+```
+
+### 3.1 - Criar PRD (Product Requirements Document)
+
+Crie o arquivo `docs/PRD.md`:
+
+```markdown
+# PRD - [NOME DO PROJETO]
+
+## Visão Geral
+[Descrição fornecida pelo usuário]
+
+## Objetivos
+- Objetivo principal: [baseado nas respostas]
+- Objetivos secundários: [listar 2-3]
+
+## Público-Alvo
+[Detalhes fornecidos]
+
+## Funcionalidades Core
+[Lista das funcionalidades mencionadas]
+
+## Requisitos Técnicos
+- Framework: Next.js 15.x com App Router
+- UI: Shadcn/ui + Tailwind CSS
+- Linguagem: TypeScript
+- Autenticação: [A definir baseado na resposta]
+- Dados: Mock data inicialmente (sem banco de dados)
+- Deploy: [A definir]
+
+## Requisitos de Segurança (OWASP Top 10)
+1. **Broken Access Control**: Implementar RBAC e validação de permissões
+2. **Cryptographic Failures**: HTTPS obrigatório, dados sensíveis criptografados
+3. **Injection**: Validação e sanitização de inputs, prepared statements
+4. **Insecure Design**: Threat modeling, princípio do menor privilégio
+5. **Security Misconfiguration**: Headers de segurança, CORS configurado
+6. **Vulnerable Components**: Auditoria regular de dependências
+7. **Authentication Failures**: Rate limiting, senhas fortes, 2FA
+8. **Data Integrity Failures**: Validação de serialização, CSRF tokens
+9. **Security Logging**: Logs de segurança, monitoramento
+10. **SSRF**: Validação de URLs, whitelist de domínios
+
+## Métricas de Sucesso
+- Performance: LCP < 2.5s, FID < 100ms
+- Segurança: 0 vulnerabilidades críticas
+- UX: Taxa de conclusão > 80%
+```
+
+### 3.2 - Criar Documentação Técnica
+
+Crie o arquivo `docs/TECHNICAL.md`:
+
+```markdown
+# Documentação Técnica - [NOME DO PROJETO]
+
+## Arquitetura
+
+### Frontend
+- **Framework**: Next.js 15 com App Router
+- **Estilização**: Tailwind CSS + Shadcn/ui
+- **Estado**: Context API / Zustand (quando necessário)
+- **Validação**: Zod + React Hook Form
+
+### Backend
+- **API Routes**: Next.js Route Handlers
+- **Validação**: Middleware com Zod
+- **Autenticação**: [A definir]
+- **Rate Limiting**: [Implementar]
+- **Dados**: Mock data (sem banco de dados inicialmente)
+
+### Segurança
+- CSP Headers configurados
+- CORS com whitelist
+- Input sanitization
+- SQL injection prevention
+- XSS protection
+
+## Padrões de Código
+
+### Estrutura de Pastas
+```
+src/
+├── app/              # Rotas e páginas
+├── components/       # Componentes reutilizáveis
+│   ├── ui/          # Shadcn components
+│   └── features/    # Componentes de features
+├── lib/             # Utilidades e configurações
+│   ├── security/    # Funções de segurança
+│   ├── mock-data/   # Dados mockados
+│   └── validations/ # Schemas Zod
+├── hooks/           # Custom hooks
+└── types/           # TypeScript types
+```
+
+### Convenções
+- Componentes: PascalCase
+- Funções utilitárias: camelCase
+- Constantes: UPPER_SNAKE_CASE
+- Arquivos: kebab-case
+
+## APIs e Endpoints
+
+### Padrões de API
+- Versionamento: /api/v1/
+- Autenticação: Bearer token
+- Rate limiting: 100 req/min
+- CORS: Configurado por endpoint
+
+### Endpoints Públicos
+[Listar conforme necessário]
+
+## Mock Data Strategy
+Inicialmente, o projeto utilizará dados mockados para desenvolvimento rápido:
+- Dados armazenados em `/src/lib/mock-data/`
+- Simular delays de rede para realismo
+- Estrutura preparada para migração futura para banco de dados
+
+## Segurança
+
+### Headers HTTP
+```typescript
+// middleware.ts
+const securityHeaders = {
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'X-XSS-Protection': '1; mode=block',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
+}
+```
+
+### Validações
+Toda entrada de dados deve ser validada com Zod antes do processamento.
+```
+
+### 3.3 - Criar Regras para IAs
+
+Crie o arquivo `.ai/rules.md`:
+
+```markdown
+# Regras para Assistentes de IA
+
+## Contexto do Projeto
+[NOME DO PROJETO] - [Descrição breve]
+
+## Regras Obrigatórias
+
+### 1. Segurança (OWASP Top 10)
+- SEMPRE validar inputs com Zod
+- NUNCA expor dados sensíveis em logs
+- SEMPRE usar prepared statements
+- IMPLEMENTAR rate limiting em todas APIs
+- VALIDAR permissões antes de ações
+- SANITIZAR outputs para prevenir XSS
+
+### 2. Padrões de Código
+- USE TypeScript strict mode
+- SIGA convenções de nomenclatura do projeto
+- IMPLEMENTE error boundaries
+- USE async/await ao invés de callbacks
+- MANTENHA componentes pequenos e focados
+
+### 3. Performance
+- IMPLEMENTE lazy loading para imagens
+- USE React.memo() quando apropriado
+- OTIMIZE bundle size
+- IMPLEMENTE caching estratégico
+
+### 4. Documentação
+- COMENTE lógica complexa
+- ATUALIZE docs ao modificar APIs
+- MANTENHA README atualizado
+- DOCUMENTE decisões arquiteturais
+
+### 5. Git e Versionamento
+- Commits atômicos e descritivos
+- Branch naming: feature/*, bugfix/*, hotfix/*
+- Sempre criar PR antes de merge
+- Executar testes antes de push
+
+## APIs e Endpoints
+
+### Endpoints Públicos
+Configurar CORS apropriadamente para endpoints que precisam ser públicos:
+```typescript
+// Exemplo para API pública
+export async function POST(req: Request) {
+  // Configurar CORS para endpoint público
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+  
+  // Validar input
+  const validation = schema.safeParse(await req.json());
+  if (!validation.success) {
+    return NextResponse.json(
+      { error: 'Invalid input' },
+      { status: 400, headers }
+    );
+  }
+  
+  // Processar...
+}
+```
+
+## Checklist Antes de Commit
+
+- [ ] Código passa no TypeScript sem erros
+- [ ] Testes executados com sucesso
+- [ ] Sem dados sensíveis expostos
+- [ ] Documentação atualizada
+- [ ] Segurança verificada (OWASP)
+- [ ] Performance otimizada
+```
+
+### 3.4 - Criar arquivo .cursorrules (Cursor IDE)
+
+Crie o arquivo `.cursorrules`:
+
+```
+# Cursor Rules for [NOME DO PROJETO]
+
+## Project Context
+This is a Next.js 15 web application with TypeScript, Tailwind CSS, and Shadcn/ui.
+
+## Code Standards
+- Always use TypeScript with strict mode
+- Implement proper error handling
+- Follow OWASP Top 10 security guidelines
+- Validate all inputs with Zod
+- Use async/await pattern
+- Keep components small and focused
+
+## Security First
+- Never expose sensitive data
+- Always sanitize user inputs
+- Implement rate limiting
+- Use HTTPS everywhere
+- Configure security headers
+
+## Before Committing
+1. Run TypeScript check: npm run type-check
+2. Run linter: npm run lint
+3. Run tests: npm run test
+4. Update documentation if needed
+
+## AI Assistant Behavior
+- Always consider security implications
+- Suggest performance optimizations
+- Maintain consistent code style
+- Update tests when changing code
+- Document complex logic
+```
+
+### 3.5 - Criar .env.local
+
+Crie o arquivo `.env.local`:
+
+```bash
+# Application
+NODE_ENV=development
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Security
+SESSION_SECRET=change-this-to-random-string-in-production
+
+# Authentication (configure conforme necessário)
+AUTH_SECRET=
+
+# API Keys (adicione conforme necessário)
+```
+
+### 3.6 - Criar middleware de segurança
+
+Crie o arquivo `src/middleware.ts`:
+
+```typescript
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  const response = NextResponse.next();
+
+  // Security headers
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  
+  // HSTS
+  if (process.env.NODE_ENV === 'production') {
+    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+
+  // CSP
+  response.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
+  );
+
+  return response;
+}
+
+export const config = {
+  matcher: '/((?!api|_next/static|_next/image|favicon.ico).*)',
+};
+```
+
+### 3.7 - Criar estrutura de Mock Data
+
+Crie o arquivo `src/lib/mock-data/index.ts`:
+
+```typescript
+// Exemplo de estrutura de mock data
+export const mockUsers = [
+  { id: 1, name: 'João Silva', email: 'joao@example.com' },
+  { id: 2, name: 'Maria Santos', email: 'maria@example.com' },
+];
+
+// Simular delay de rede
+export const simulateDelay = (ms: number = 1000) => 
+  new Promise(resolve => setTimeout(resolve, ms));
+
+// Exemplo de função para buscar dados mockados
+export async function getMockUser(id: number) {
+  await simulateDelay(500);
+  return mockUsers.find(user => user.id === id);
+}
+```
+
+**VERIFICAÇÃO 2**: Após criar todos os arquivos:
+- [ ] Todos os arquivos foram criados corretamente?
+- [ ] O arquivo .env.local está no .gitignore?
+- [ ] A aplicação ainda roda sem erros?
+
+Digite "continuar etapa 4" para prosseguir.
+
+## ETAPA 4: Configuração do Git e GitHub
+
+### 4.1 - Verificar Git
+
+Execute:
+```bash
+git status
+```
+
+Se aparecer "fatal: not a git repository", execute:
+```bash
+git init
+git add .
+git commit -m "Initial commit: Project setup with security and documentation"
+```
+
+### 4.2 - Configurar GitHub
+
+**Você tem uma conta no GitHub?**
+
+Se NÃO tiver:
+1. Acesse https://github.com e clique em "Sign up"
+2. Escolha um nome de usuário único
+3. Use um email válido
+4. Crie uma senha forte
+5. Verifique seu email
+
+Se JÁ tiver conta:
+1. Acesse https://github.com/new
+2. Nome do repositório: [nome-do-projeto]
+3. Descrição: [sua descrição]
+4. Deixe como "Private" inicialmente
+5. NÃO marque "Initialize with README"
+6. Clique em "Create repository"
+
+### 4.3 - Conectar ao GitHub
+
+Após criar o repositório, execute:
+```bash
+git remote add origin https://github.com/[seu-usuario]/[nome-do-projeto].git
+git branch -M main
+git push -u origin main
+```
+
+**VERIFICAÇÃO FINAL**:
+- [ ] Repositório criado no GitHub?
+- [ ] Código enviado com sucesso?
+- [ ] Todos os arquivos estão no repositório?
+
+## 🎉 PARABÉNS!
+
+Pronto! A comunidade Builder construiu esse prompt para te facilitar em toda a integração à sua primeira experiência de uma forma correta, dentro do que há de mais moderno em engenharia de contexto.
+
+Seu projeto está configurado com:
+✅ Next.js + TypeScript + Tailwind + Shadcn/ui
+✅ Documentação completa (PRD, Technical, AI Rules)
+✅ Segurança OWASP Top 10 implementada
+✅ Estrutura profissional de pastas
+✅ Git + GitHub configurados
+✅ Mock data pronto para desenvolvimento
+
+### 🚀 Próximos Passos - Desenvolvimento com Mock Data
+
+Seu projeto está pronto para começar o desenvolvimento usando dados mockados. Isso permite:
+- Desenvolvimento rápido sem configurar banco de dados
+- Testes imediatos de funcionalidades
+- Estrutura preparada para migração futura
+
+### Comandos úteis:
+```bash
+npm run dev          # Desenvolvimento
+npm run build        # Build de produção
+npm run lint         # Verificar código
+npm run type-check   # Verificar TypeScript
+```
+
+---
+
+## 💡 Quer que eu comece o desenvolvimento?
+
+Se você quiser que eu comece o desenvolvimento do projeto de acordo com as especificações que você forneceu, simplesmente digite **"continuar"**.
+
+Ao digitar "continuar", eu vou:
+1. Ler o PRD que criamos
+2. Analisar todas as funcionalidades solicitadas
+3. Iniciar o desenvolvimento seguindo as melhores práticas
+4. Criar componentes, páginas e lógica necessária
+5. Implementar as funcionalidades usando mock data
+
+Tudo será desenvolvido seguindo os padrões de segurança OWASP Top 10 e as convenções estabelecidas na documentação!
