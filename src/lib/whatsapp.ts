@@ -1,34 +1,54 @@
 import { Student } from "./types";
 import { toast } from "sonner";
+import { getApiUrl } from "./utils";
 
-export const sendWhatsAppMessage = (student: Student) => {
+export const sendWhatsAppMessage = async (student: Student) => {
   const defaultMessage = `Olá ${student.name}, tudo bem? 😊\nPassando para lembrar que a mensalidade no valor de R$ ${student.value} já está disponível.\nQualquer dúvida é só me avisar 💪`;
   
   const message = student.customMessage || defaultMessage;
   
-  // Simulação de envio
-  console.log(`[WhatsApp Mock] Enviando para ${student.phone}:`);
-  console.log(message);
-  
-  // Feedback visual
-  toast.success(`Mensagem enviada para ${student.name}`, {
-    description: "Confira o console para ver o conteúdo.",
-    duration: 3000,
-  });
+  try {
+    const response = await fetch(`${getApiUrl()}/message/send`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        phoneNumber: student.phone,
+        message: message,
+      }),
+    });
 
-  return true;
+    if (!response.ok) {
+      throw new Error('Falha ao enviar mensagem');
+    }
+
+    console.log(`[WhatsApp] Enviado para ${student.phone}`);
+    
+    // Feedback visual
+    toast.success(`Mensagem enviada para ${student.name}`);
+    return true;
+
+  } catch (error) {
+    console.error('Erro ao enviar mensagem:', error);
+    toast.error(`Erro ao enviar para ${student.name}. Verifique se o backend está conectado.`);
+    return false;
+  }
 };
 
-export const runDailyAutomation = (students: Student[]) => {
+export const runDailyAutomation = async (students: Student[]) => {
   const today = new Date().getDate();
   let processedCount = 0;
 
-  students.forEach(student => {
+  // Processar sequencialmente para não sobrecarregar
+  for (const student of students) {
     if (student.dueDate === today && student.status === 'pending') {
-      sendWhatsAppMessage(student);
+      await sendWhatsAppMessage(student);
       processedCount++;
+      // Pequeno delay para evitar bloqueio do WhatsApp
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
-  });
+  }
 
   if (processedCount > 0) {
     console.log(`Automação diária: ${processedCount} mensagens enviadas.`);

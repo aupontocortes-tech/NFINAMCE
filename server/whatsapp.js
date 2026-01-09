@@ -104,6 +104,26 @@ export const desconectarWhatsApp = async () => {
   return false;
 };
 
+export const enviarMensagem = async (numero, texto) => {
+  if (connectionStatus !== 'CONNECTED') {
+    throw new Error('WhatsApp não está conectado.');
+  }
+
+  // Formatação básica do número
+  // Assumindo que o número já venha com 55 e DDD (ex: 5511999999999)
+  const limpo = numero.replace(/\D/g, '');
+  const chatId = limpo.includes('@c.us') ? limpo : `${limpo}@c.us`;
+
+  try {
+    await client.sendMessage(chatId, texto);
+    console.log(`📤 Mensagem enviada para ${limpo}`);
+    return true;
+  } catch (error) {
+    console.error(`Erro ao enviar mensagem para ${numero}:`, error);
+    throw error;
+  }
+};
+
 export const enviarMensagemWhatsApp = async (aluno, mensagem) => {
   if (connectionStatus !== 'CONNECTED') {
     console.warn(`🚫 BLOQUEADO: Tentativa de enviar para ${aluno.nome}, mas WhatsApp não está conectado.`);

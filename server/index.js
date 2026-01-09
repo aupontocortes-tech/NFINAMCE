@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import alunosRoutes from './routes/alunos.js';
 import { iniciarCron } from './cron.js';
-import { getStatus, desconectarWhatsApp } from './whatsapp.js';
+import { getStatus, desconectarWhatsApp, enviarMensagem } from './whatsapp.js';
 import './whatsapp.js'; 
 
 const app = express();
@@ -13,6 +13,23 @@ app.use(express.json());
 
 // Rotas da API de Alunos
 app.use('/', alunosRoutes);
+
+// Rotas de Mensagem
+app.post('/message/send', async (req, res) => {
+  const { phoneNumber, message } = req.body;
+
+  if (!phoneNumber || !message) {
+    return res.status(400).json({ error: 'Número e mensagem são obrigatórios' });
+  }
+
+  try {
+    await enviarMensagem(phoneNumber, message);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Erro na rota /message/send:', error);
+    res.status(500).json({ error: error.message || 'Erro interno ao enviar mensagem' });
+  }
+});
 
 // Rotas do WhatsApp
 app.get('/whatsapp/status', (req, res) => {

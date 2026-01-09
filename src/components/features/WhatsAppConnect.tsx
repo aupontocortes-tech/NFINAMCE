@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Loader2, Smartphone, CheckCircle, XCircle, LogOut, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { getApiUrl } from '@/lib/utils';
 
 interface WhatsAppStatus {
   status: 'DISCONNECTED' | 'INITIALIZING' | 'QR_READY' | 'CONNECTED';
@@ -28,13 +29,13 @@ export function WhatsAppConnect() {
 
   const fetchStatus = async () => {
     try {
-      const res = await fetch('http://localhost:3001/whatsapp/status');
+      const res = await fetch(`${getApiUrl()}/whatsapp/status`);
       if (res.ok) {
         const json = await res.json();
         setData(json);
       }
     } catch (error) {
-      console.error('Erro ao conectar com backend (verifique se está rodando em localhost:3001):', error);
+      console.error('Erro ao conectar com backend:', error);
     }
   };
 
@@ -43,7 +44,7 @@ export function WhatsAppConnect() {
     
     setLoading(true);
     try {
-      await fetch('http://localhost:3001/whatsapp/desconectar', { method: 'POST' });
+      await fetch(`${getApiUrl()}/whatsapp/desconectar`, { method: 'POST' });
       // Aguarda um pouco para o backend reiniciar o processo
       setTimeout(fetchStatus, 2000);
     } catch (error) {
@@ -159,9 +160,9 @@ export function WhatsAppConnect() {
               <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-xs text-amber-800 text-left">
                 <p className="font-semibold mb-1">⚠️ Dica de Solução:</p>
                 <ul className="list-disc pl-4 space-y-1">
-                  <li>Se estiver no <strong>Vercel (Celular/Web)</strong>, isso é normal. A conexão deve ser feita pelo PC.</li>
-                  <li>Acesse <strong>http://localhost:3000</strong> no seu computador para conectar.</li>
-                  <li>Verifique se o terminal preto (server) está aberto.</li>
+                  <li>Se estiver no <strong>Localhost</strong>, verifique se o terminal 'server' está rodando.</li>
+                  <li>Se estiver na <strong>Vercel</strong>, o backend precisa estar hospedado (Render/Railway).</li>
+                  <li>Caso contrário, use o computador local para conectar.</li>
                 </ul>
               </div>
             </div>
