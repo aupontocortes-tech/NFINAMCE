@@ -153,15 +153,22 @@ export function WhatsAppConnect() {
             </div>
             <div>
               <h3 className="font-semibold text-lg text-zinc-900">Desconectado</h3>
-              <p className="text-sm text-zinc-500 max-w-[250px] mx-auto">
+              <p className="text-sm text-zinc-500 max-w-[280px] mx-auto mt-2">
                 O WhatsApp precisa estar conectado para enviar cobranças automáticas.
               </p>
+              <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-xs text-amber-800 text-left">
+                <p className="font-semibold mb-1">⚠️ Dica de Solução:</p>
+                <ul className="list-disc pl-4 space-y-1">
+                  <li>Se estiver no <strong>Vercel (Celular/Web)</strong>, isso é normal. A conexão deve ser feita pelo PC.</li>
+                  <li>Acesse <strong>http://localhost:3000</strong> no seu computador para conectar.</li>
+                  <li>Verifique se o terminal preto (server) está aberto.</li>
+                </ul>
+              </div>
             </div>
-            <Button className="gap-2" onClick={() => fetchStatus()} variant="outline">
+            <Button className="gap-2 mt-2" onClick={() => fetchStatus()} variant="outline">
               <RefreshCw className="w-4 h-4" />
               Tentar Reconectar
             </Button>
-            <p className="text-xs text-zinc-400">Certifique-se que o terminal 'server' está rodando.</p>
           </div>
         );
     }
