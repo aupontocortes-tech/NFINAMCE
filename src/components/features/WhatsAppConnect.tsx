@@ -34,7 +34,7 @@ export function WhatsAppConnect() {
         setData(json);
       }
     } catch (error) {
-      console.error('Erro ao conectar com backend:', error);
+      console.error('Erro ao conectar com backend (verifique se está rodando em localhost:3001):', error);
     }
   };
 

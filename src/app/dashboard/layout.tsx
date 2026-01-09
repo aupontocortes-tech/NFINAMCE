@@ -17,7 +17,7 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col">
-      {/* Header Mobile-first */}
+      {/* Header Mobile-first - NFINANCE */}
       <header className="bg-white border-b border-zinc-200 sticky top-0 z-10 px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2">
           <Dumbbell className="text-primary w-6 h-6" />
