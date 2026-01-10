@@ -6,7 +6,12 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function getApiUrl() {
-  // Se houver uma variável de ambiente definida (na Vercel), usa ela.
-  // Caso contrário, usa localhost (para desenvolvimento).
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  
+  // Configuração automática para o Render (Frontend Production)
+  if (typeof window !== 'undefined' && window.location.hostname.includes('onrender.com')) {
+    return 'https://nfinamce.onrender.com';
+  }
+
+  return 'http://localhost:3001';
 }
