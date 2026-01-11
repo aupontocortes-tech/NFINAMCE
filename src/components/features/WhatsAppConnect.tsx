@@ -26,6 +26,7 @@ export function WhatsAppConnect() {
     session: null 
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchStatus = async () => {
     try {
