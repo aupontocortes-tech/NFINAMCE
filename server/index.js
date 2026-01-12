@@ -2,7 +2,17 @@ import express from 'express';
 import cors from 'cors';
 import alunosRoutes from './routes/alunos.js';
 import { iniciarCron } from './cron.js';
-import { getStatus, desconectarWhatsApp, enviarMensagem, reiniciarWhatsApp, startWhatsAppService } from './whatsapp.js'; 
+import { 
+  getStatus, 
+  desconectarWhatsApp, 
+  enviarMensagem, 
+  reiniciarWhatsApp, 
+  startWhatsAppService 
+} from './whatsapp.js';
+
+console.log('📦 Módulo WhatsApp importado. Funções disponíveis:', { 
+  startWhatsAppService: typeof startWhatsAppService 
+});
 
 const app = express();
 const PORT = process.env.PORT || 3001; 
@@ -72,7 +82,11 @@ app.listen(PORT, () => {
   // Inicia o WhatsApp com atraso para não bloquear o boot do servidor
   console.log('⏳ Aguardando 10s para iniciar WhatsApp...');
   setTimeout(() => {
-    startWhatsAppService().catch(e => console.error('Erro ao iniciar WhatsApp:', e));
+    if (typeof startWhatsAppService === 'function') {
+      startWhatsAppService().catch(e => console.error('Erro ao iniciar WhatsApp:', e));
+    } else {
+      console.error('❌ ERRO CRÍTICO: startWhatsAppService não é uma função!', startWhatsAppService);
+    }
   }, 10000);
 });
 
