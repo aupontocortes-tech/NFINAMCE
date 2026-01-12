@@ -91,16 +91,16 @@ client.on('disconnected', (reason) => {
   }, 5000);
 });
 
-// Inicialização Segura
-console.log('🔄 Inicializando serviço do WhatsApp...');
-try {
-  client.initialize().catch(err => {
+// Inicialização Segura (Removida execução automática, agora exportada)
+export const startWhatsAppService = async () => {
+  console.log('🔄 Inicializando serviço do WhatsApp (Delayed Start)...');
+  try {
+    await client.initialize();
+  } catch (err) {
     console.error('❌ Erro fatal na inicialização do cliente:', err);
     connectionStatus = 'DISCONNECTED';
-  });
-} catch (e) {
-  console.error('❌ Exceção síncrona na inicialização:', e);
-}
+  }
+};
 
 // --- Métodos Exportados ---
 

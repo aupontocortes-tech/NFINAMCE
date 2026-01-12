@@ -2,8 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import alunosRoutes from './routes/alunos.js';
 import { iniciarCron } from './cron.js';
-import { getStatus, desconectarWhatsApp, enviarMensagem, reiniciarWhatsApp } from './whatsapp.js';
-import './whatsapp.js'; 
+import { getStatus, desconectarWhatsApp, enviarMensagem, reiniciarWhatsApp, startWhatsAppService } from './whatsapp.js'; 
 
 const app = express();
 const PORT = process.env.PORT || 3001; 
