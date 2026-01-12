@@ -67,5 +67,21 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`\n🚀 Servidor backend rodando em http://localhost:${PORT}`);
   console.log(`📝 API disponível em http://localhost:${PORT}/alunos`);
+  
   iniciarCron();
+
+  // Inicia o WhatsApp com atraso para não bloquear o boot do servidor
+  console.log('⏳ Aguardando 10s para iniciar WhatsApp...');
+  setTimeout(() => {
+    startWhatsAppService().catch(e => console.error('Erro ao iniciar WhatsApp:', e));
+  }, 10000);
+});
+
+// Captura de erros globais para evitar crash silencioso
+process.on('uncaughtException', (err) => {
+  console.error('❌ CRASH: Exceção não tratada:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ CRASH: Rejeição de Promise não tratada:', reason);
 });
