@@ -17,8 +17,8 @@ export default function DashboardPage() {
   const pendingCount = pendingStudents.length;
   const pendingValue = pendingStudents.reduce((acc, curr) => acc + curr.value, 0);
 
-  const handleRunAutomation = () => {
-    const count = runDailyAutomation(students);
+  const handleRunAutomation = async () => {
+    const count = await runDailyAutomation(students);
     if (count > 0) {
       toast.success(`${count} mensagens de cobrança enviadas!`);
     } else {
