@@ -46,9 +46,6 @@ export default function DashboardLayout({
         </nav>
 
         <div className="p-4 border-t border-zinc-200 space-y-3 bg-zinc-50/50">
-          <div className="w-full">
-            <WhatsAppConnect />
-          </div>
           <Button variant="outline" className="w-full justify-start gap-3 text-zinc-600 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors" asChild>
             <Link href="/">
               <LogOut className="w-4 h-4" />
@@ -74,6 +71,16 @@ export default function DashboardLayout({
                 <LogOut className="w-5 h-5 text-zinc-500" />
               </Link>
             </Button>
+          </div>
+        </header>
+
+        {/* Header Desktop (apenas visível em telas grandes) */}
+        <header className="hidden md:flex bg-white border-b border-zinc-200 sticky top-0 z-20 px-8 py-3 items-center justify-between shadow-sm">
+          <h2 className="font-semibold text-lg text-zinc-800">
+             {pathname === '/dashboard' ? 'Visão Geral' : pathname === '/dashboard/students' ? 'Gerenciar Alunos' : 'Dashboard'}
+          </h2>
+          <div className="flex items-center gap-4">
+            <WhatsAppConnect />
           </div>
         </header>
 
