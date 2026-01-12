@@ -55,6 +55,10 @@ app.post('/whatsapp/restart', async (req, res) => {
   }
 });
 
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 // Rota raiz
 app.get('/', (req, res) => {
   res.send('NFINANCE Backend is running! 🚀');
