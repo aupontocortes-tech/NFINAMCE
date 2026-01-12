@@ -104,6 +104,33 @@ export const desconectarWhatsApp = async () => {
   return false;
 };
 
+export const reiniciarWhatsApp = async () => {
+  console.log('🔄 Reiniciando serviço do WhatsApp manualmente...');
+  try {
+    await client.destroy();
+  } catch (e) {
+    console.error('Erro ao destruir cliente anterior:', e);
+  }
+  
+  qrCodeData = null;
+  connectionStatus = 'INITIALIZING';
+  sessionInfo = null;
+  
+  try {
+    await client.initialize();
+    console.log('✅ Inicialização solicitada com sucesso');
+    return true;
+  } catch (e) {
+    console.error('❌ Erro ao inicializar:', e);
+    return false;
+  }
+};
+      return false;
+    }
+  }
+  return false;
+};
+
 export const enviarMensagem = async (numero, texto) => {
   if (connectionStatus !== 'CONNECTED') {
     throw new Error('WhatsApp não está conectado.');

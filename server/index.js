@@ -45,6 +45,16 @@ app.post('/whatsapp/desconectar', async (req, res) => {
   }
 });
 
+app.post('/whatsapp/restart', async (req, res) => {
+  try {
+    await reiniciarWhatsApp();
+    res.json({ message: 'Reinicialização do WhatsApp iniciada com sucesso' });
+  } catch (error) {
+    console.error('Erro ao reiniciar WhatsApp:', error);
+    res.status(500).json({ error: 'Falha ao reiniciar serviço do WhatsApp' });
+  }
+});
+
 // Rota raiz
 app.get('/', (req, res) => {
   res.send('NFINANCE Backend is running! 🚀');

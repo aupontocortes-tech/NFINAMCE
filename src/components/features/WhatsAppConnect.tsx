@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Smartphone, CheckCircle, XCircle, LogOut, RefreshCw } from 'lucide-react';
+import { Loader2, Smartphone, CheckCircle, XCircle, LogOut, RefreshCw, Play } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getApiUrl } from '@/lib/utils';
