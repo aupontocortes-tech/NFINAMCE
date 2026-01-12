@@ -177,10 +177,16 @@ export function WhatsAppConnect() {
                 </ul>
               </div>
             </div>
-            <Button className="gap-2 mt-2" onClick={() => fetchStatus()} variant="outline">
-              <RefreshCw className="w-4 h-4" />
-              Tentar Reconectar
-            </Button>
+            <div className="flex gap-2 mt-2">
+              <Button onClick={() => fetchStatus()} variant="outline" className="gap-2">
+                <RefreshCw className="w-4 h-4" />
+                Atualizar Status
+              </Button>
+              <Button onClick={handleRestart} variant="secondary" className="gap-2">
+                <Play className="w-4 h-4" />
+                Reiniciar Serviço
+              </Button>
+            </div>
           </div>
         );
     }
