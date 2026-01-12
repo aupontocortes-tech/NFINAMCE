@@ -34,9 +34,26 @@ export function WhatsAppConnect() {
       if (res.ok) {
         const json = await res.json();
         setData(json);
+        setError(null);
+      } else {
+        throw new Error(`Status: ${res.status}`);
       }
     } catch (error) {
       console.error('Erro ao conectar com backend:', error);
+      setError(error instanceof Error ? error.message : 'Falha ao conectar');
+    }
+  };
+
+  const handleRestart = async () => {
+    setLoading(true);
+    try {
+      await fetch(`${getApiUrl()}/whatsapp/restart`, { method: 'POST' });
+      setTimeout(fetchStatus, 5000);
+    } catch (error) {
+      console.error('Erro ao reiniciar:', error);
+      setError('Falha ao reiniciar serviço');
+    } finally {
+      setLoading(false);
     }
   };
 
