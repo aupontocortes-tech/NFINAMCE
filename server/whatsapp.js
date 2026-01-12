@@ -125,11 +125,6 @@ export const reiniciarWhatsApp = async () => {
     return false;
   }
 };
-      return false;
-    }
-  }
-  return false;
-};
 
 export const enviarMensagem = async (numero, texto) => {
   if (connectionStatus !== 'CONNECTED') {

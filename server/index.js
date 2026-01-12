@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import alunosRoutes from './routes/alunos.js';
 import { iniciarCron } from './cron.js';
-import { getStatus, desconectarWhatsApp, enviarMensagem } from './whatsapp.js';
+import { getStatus, desconectarWhatsApp, enviarMensagem, reiniciarWhatsApp } from './whatsapp.js';
 import './whatsapp.js'; 
 
 const app = express();
