@@ -1,38 +1,29 @@
-import pkg from 'whatsapp-web.js';
-const { LocalAuth } = pkg;
+import { useMultiFileAuthState } from '@whiskeysockets/baileys';
+import path from 'path';
+import fs from 'fs';
 
 /**
- * Interface Base para Repositório de Sessões.
- * Garante que a aplicação possa mudar de LocalAuth para Banco de Dados
- * sem alterar a lógica de negócios (Services/Controllers).
+ * Repositório de Sessões usando Baileys MultiFileAuth.
+ * Salva as credenciais em arquivos JSON locais.
  */
-export class SessionRepository {
-  constructor() {
-    if (this.constructor === SessionRepository) {
-      throw new Error("A classe abstrata 'SessionRepository' não pode ser instanciada diretamente.");
-    }
-  }
-
+export class LocalSessionRepository {
   /**
-   * Retorna a estratégia de autenticação para o cliente WhatsApp.
-   * @param {string} clientId - ID único do cliente/sessão
+   * Prepara o estado de autenticação para o Baileys.
+   * @param {string} clientId - ID da sessão
    */
-  getAuthStrategy(clientId) {
-    throw new Error("O método 'getAuthStrategy' deve ser implementado.");
+  async getAuthStrategy(clientId) {
+    // Define a pasta onde as credenciais serão salvas
+    // Usamos 'baileys_auth_info' na raiz do server
+    const authPath = path.resolve('baileys_auth_info', clientId);
+    
+    // Cria o diretório se não existir
+    if (!fs.existsSync(authPath)) {
+      fs.mkdirSync(authPath, { recursive: true });
+    }
+
+    console.log(`📂 Carregando credenciais de: ${authPath}`);
+    
+    // Retorna o objeto de estado e a função de salvamento
+    return await useMultiFileAuthState(authPath);
   }
 }
-
-/**
- * Implementação usando LocalAuth (Sistema de Arquivos).
- * Ideal para MVP e compatível com o sistema atual.
- */
-export class LocalSessionRepository extends SessionRepository {
-  getAuthStrategy(clientId) {
-    console.log(`📂 Inicializando armazenamento local para sessão: ${clientId}`);
-    return new LocalAuth({ clientId });
-  }
-}
-
-// No futuro, você pode criar:
-// export class MongoSessionRepository extends SessionRepository { ... }
-// export class PostgresSessionRepository extends SessionRepository { ... }

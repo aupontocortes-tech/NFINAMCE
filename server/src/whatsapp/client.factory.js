@@ -1,35 +1,31 @@
-import pkg from 'whatsapp-web.js';
-const { Client } = pkg;
-import { config } from '../config/env.js';
+import { makeWASocket, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
+import pino from 'pino';
 
 /**
- * Factory para criar instâncias do cliente WhatsApp.
- * Centraliza as configurações do Puppeteer para garantir compatibilidade com o Render.
+ * Factory para criar instâncias do socket Baileys.
+ * Substitui o Puppeteer/Chrome por uma conexão WebSocket direta.
  */
-export const createWhatsAppClient = (clientId, authStrategy) => {
-  console.log(`🛠️ Factory: Criando nova instância do WhatsApp Client para [${clientId}]`);
+export const createWhatsAppClient = async (auth) => {
+  const { state, saveCreds } = auth;
   
-  return new Client({
-    authStrategy: authStrategy,
-    // Bloqueia a versão do WhatsApp Web para evitar quebras com atualizações automáticas
-    webVersionCache: {
-      type: 'remote',
-      remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
-    },
-    puppeteer: {
-      headless: true, // Tente 'new' se estiver usando Puppeteer > 19, mas true é seguro
-      executablePath: config.puppeteer.executablePath,
-      timeout: 120000, // Timeout aumentado drasticamente para o Render (2min)
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process', // Importante para ambientes com pouca memória
-        '--disable-gpu'
-      ]
-    }
+  // Obtém a versão mais recente suportada para evitar banimentos/erros de protocolo
+  const { version } = await fetchLatestBaileysVersion();
+  
+  console.log(`🛠️ Factory: Criando Socket Baileys (v${version.join('.')})`);
+
+  const sock = makeWASocket({
+    version,
+    logger: pino({ level: 'silent' }), // Logs detalhados apenas se necessário ('debug')
+    printQRInTerminal: false, // O QR Code será enviado para o frontend
+    auth: state,
+    browser: ['NFinance', 'Chrome', '10.0.0'], // Identificação do cliente
+    connectTimeoutMs: 60000,
+    keepAliveIntervalMs: 10000,
+    syncFullHistory: false, // Otimização: não sincronizar todo o histórico
   });
+
+  // Vincula a persistência de credenciais (essencial para manter a sessão)
+  sock.ev.on('creds.update', saveCreds);
+
+  return sock;
 };
