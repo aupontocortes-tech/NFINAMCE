@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { getApiUrl } from '@/lib/utils';
 
 export default function StudentsPage() {
   const { students, markAsPaid, deleteStudent } = useAppStore();

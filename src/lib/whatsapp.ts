@@ -8,7 +8,7 @@ export const sendWhatsAppMessage = async (student: Student) => {
   const message = student.customMessage || defaultMessage;
   
   try {
-    const response = await fetch(`${getApiUrl()}/message/send`, {
+    const response = await fetch(`${getApiUrl()}/whatsapp/send`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
