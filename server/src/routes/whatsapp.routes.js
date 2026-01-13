@@ -13,6 +13,7 @@ router.get('/status', (req, res) => {
 
 router.post('/restart', (req, res) => {
   req.body.userId = DEFAULT_USER_ID;
+  req.body.force = true; // Força o reinício
   WhatsAppController.startSession(req, res);
 });
 

@@ -12,13 +12,24 @@ class WhatsAppSessionService {
 
   /**
    * Inicia uma sessão do WhatsApp para um userId específico.
-   * Se já existir, retorna o status atual.
+   * Se já existir, retorna o status atual, a menos que force=true.
    */
-  async startSession(userId) {
-    if (this.clients.has(userId)) {
+  async startSession(userId, force = false) {
+    // Se já existe e não é forçado, verifica se está saudável
+    if (this.clients.has(userId) && !force) {
       const status = this.statuses.get(userId);
-      console.log(`Sessão para ${userId} já existe. Status: ${status}`);
-      return { status, qrCode: this.qrCodes.get(userId) };
+      
+      // Se estiver travado em ERROR ou DISCONNECTED, força reinício automaticamente
+      if (status === 'ERROR' || status === 'DISCONNECTED') {
+        console.log(`Sessão ${userId} está em ${status}. Forçando reinício...`);
+        await this.disconnect(userId); // Garante limpeza
+      } else {
+        console.log(`Sessão para ${userId} já existe. Status: ${status}`);
+        return { status, qrCode: this.qrCodes.get(userId) };
+      }
+    } else if (this.clients.has(userId) && force) {
+      console.log(`Reinício forçado solicitado para ${userId}.`);
+      await this.disconnect(userId);
     }
 
     this.updateStatus(userId, 'INITIALIZING');

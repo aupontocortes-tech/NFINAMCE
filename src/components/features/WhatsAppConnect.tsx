@@ -160,8 +160,28 @@ export function WhatsAppConnect() {
             <div>
               <h3 className="font-medium text-zinc-900">Iniciando WhatsApp...</h3>
               <p className="text-sm text-zinc-500">Aguardando sessão ou gerando QR Code.</p>
+              <p className="text-xs text-zinc-400 mt-2">Isso pode levar até 30 segundos.</p>
             </div>
           </div>
+        );
+
+      case 'ERROR': // Novo caso para tratar erro explicitamente
+        return (
+           <div className="flex flex-col items-center py-6 gap-4 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+              <XCircle className="w-8 h-8 text-red-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg text-red-700">Falha ao Iniciar</h3>
+              <p className="text-sm text-zinc-600 mb-4">
+                Ocorreu um erro ao tentar iniciar o WhatsApp no servidor.
+              </p>
+              <Button onClick={handleRestart} variant="destructive" className="gap-2 w-full">
+                <RefreshCw className="w-4 h-4" />
+                Tentar Novamente (Forçar)
+              </Button>
+            </div>
+           </div>
         );
 
       default: // DISCONNECTED

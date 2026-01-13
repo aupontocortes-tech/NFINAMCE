@@ -2,13 +2,13 @@ import { sessionService } from '../whatsapp/session.service.js';
 
 export const startSession = async (req, res) => {
   try {
-    const { userId } = req.body; // Espera receber { userId: 'algum-id' }
+    const { userId, force } = req.body; // Espera receber { userId: 'algum-id', force: boolean }
     
     if (!userId) {
       return res.status(400).json({ error: 'userId é obrigatório' });
     }
 
-    const result = await sessionService.startSession(userId);
+    const result = await sessionService.startSession(userId, force);
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
