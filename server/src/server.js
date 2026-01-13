@@ -41,8 +41,11 @@ app.listen(config.port, () => {
   // Inicia o agendamento de tarefas
   iniciarCron();
 
-  // Opcional: Iniciar sessão padrão automaticamente se desejar
-  // sessionService.startSession('default').catch(e => console.error('Erro ao iniciar sessão default:', e));
+  // Inicia sessão padrão automaticamente com delay para não sobrecarregar boot
+  console.log('⏳ Aguardando 10s para iniciar WhatsApp Service...');
+  setTimeout(() => {
+    sessionService.startSession('default').catch(e => console.error('Erro ao iniciar sessão default:', e));
+  }, 10000);
 });
 
 // Tratamento de Processos
