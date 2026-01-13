@@ -1,4 +1,3 @@
-import qrcode from 'qrcode';
 import { LocalSessionRepository } from './session.repository.js';
 import { createWhatsAppClient } from './client.factory.js';
 import { randomDelay } from '../utils/delay.js';
@@ -7,7 +6,7 @@ class WhatsAppSessionService {
   constructor(repository) {
     this.repository = repository;
     this.clients = new Map(); // userId -> Client
-    this.qrCodes = new Map(); // userId -> Base64 QR
+    this.qrCodes = new Map(); // userId -> Raw QR String
     this.statuses = new Map(); // userId -> 'INITIALIZING' | 'QR_READY' | 'READY' | 'DISCONNECTED' | 'ERROR'
   }
 
@@ -52,16 +51,11 @@ class WhatsAppSessionService {
    * Configura os event listeners do cliente WhatsApp.
    */
   setupEvents(client, userId) {
-    client.on('qr', async (qr) => {
+    client.on('qr', (qr) => {
       console.log(`⚡ QR Code recebido para ${userId}`);
-      try {
-        // Converte o QR Code para Base64 (Data URL) para exibição no frontend
-        const base64 = await qrcode.toDataURL(qr);
-        this.qrCodes.set(userId, base64);
-        this.updateStatus(userId, 'QR_READY');
-      } catch (err) {
-        console.error(`Erro ao gerar QR Base64 para ${userId}:`, err);
-      }
+      // Armazena o código QR bruto para o frontend gerar o SVG
+      this.qrCodes.set(userId, qr);
+      this.updateStatus(userId, 'QR_READY');
     });
 
     client.on('ready', () => {
