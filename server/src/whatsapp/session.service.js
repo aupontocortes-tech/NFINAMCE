@@ -81,8 +81,10 @@ class WhatsAppSessionService {
         
         if (shouldReconnect) {
             this.updateStatus(userId, 'RECONNECTING');
-            // Baileys recomenda recriar o socket na reconexão
-            this.startSession(userId, false); 
+            // Delay para evitar loop infinito em caso de erro persistente
+            setTimeout(() => {
+                this.startSession(userId, false);
+            }, 3000); 
         } else {
             this.log(`🚫 Desconectado (Logout). Limpando sessão ${userId}.`);
             this.disconnect(userId);
