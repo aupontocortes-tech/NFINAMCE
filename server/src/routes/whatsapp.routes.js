@@ -31,7 +31,12 @@ router.get('/status/:userId', WhatsAppController.getStatus);
 router.get('/qr/:userId', WhatsAppController.getQrCode);
 
 // Envia mensagem
-router.post('/send', WhatsAppController.sendMessage);
+router.post('/send', (req, res) => {
+  if (!req.body.userId) {
+    req.body.userId = DEFAULT_USER_ID;
+  }
+  WhatsAppController.sendMessage(req, res);
+});
 
 // Desconecta sessão
 router.post('/disconnect', WhatsAppController.disconnectSession);

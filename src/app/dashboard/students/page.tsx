@@ -40,8 +40,9 @@ export default function StudentsPage() {
     
     setSending(true);
     try {
-      const res = await fetch('http://localhost:3001/cobrancas/pendentes', { method: 'POST' });
+      const res = await fetch(`${getApiUrl()}/cobrancas/pendentes`, { method: 'POST' });
       const data = await res.json();
+      
       
       if (res.ok) {
         toast.success(data.message);
