@@ -1,4 +1,5 @@
-import { Client } from 'whatsapp-web.js';
+import pkg from 'whatsapp-web.js';
+const { Client } = pkg;
 import { config } from '../config/env.js';
 
 /**

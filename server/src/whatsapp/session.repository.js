@@ -1,4 +1,5 @@
-import { LocalAuth } from 'whatsapp-web.js';
+import pkg from 'whatsapp-web.js';
+const { LocalAuth } = pkg;
 
 /**
  * Interface Base para Repositório de Sessões.
