@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { LocalSessionRepository } from './session.repository.js';
 import { createWhatsAppClient } from './client.factory.js';
 import { randomDelay } from '../utils/delay.js';
@@ -158,18 +160,37 @@ class WhatsAppSessionService {
   }
   
   /**
-   * Método para desconectar manualmente
+   * Método para desconectar manualmente e limpar arquivos
    */
   async disconnect(userId) {
       const client = this.clients.get(userId);
+      this.log(`Desconectando sessão ${userId}...`);
+      
       if (client) {
-          await client.destroy();
+          try {
+            await client.destroy();
+          } catch (e) {
+            this.log(`Erro ao destruir cliente: ${e.message}`, 'error');
+          }
           this.clients.delete(userId);
-          this.statuses.set(userId, 'DISCONNECTED');
-          this.qrCodes.delete(userId);
-          return true;
       }
-      return false;
+      
+      // Limpeza física dos arquivos de autenticação (.wwebjs_auth)
+      // Isso é crucial para corrigir loops de "corrupted session" no Render
+      const authPath = path.resolve(process.cwd(), '.wwebjs_auth');
+      if (fs.existsSync(authPath)) {
+        this.log(`Limpando arquivos de autenticação em ${authPath}...`);
+        try {
+          fs.rmSync(authPath, { recursive: true, force: true });
+          this.log('Arquivos de autenticação removidos com sucesso.');
+        } catch (err) {
+          this.log(`Erro ao remover arquivos de autenticação: ${err.message}`, 'error');
+        }
+      }
+
+      this.statuses.set(userId, 'DISCONNECTED');
+      this.qrCodes.delete(userId);
+      return true;
   }
 }
 
