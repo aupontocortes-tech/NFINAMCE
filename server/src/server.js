@@ -42,10 +42,10 @@ app.listen(config.port, () => {
   iniciarCron();
 
   // Inicia sessão padrão automaticamente com delay para não sobrecarregar boot
-  console.log('⏳ Aguardando 10s para iniciar WhatsApp Service...');
+  console.log('⏳ Aguardando 5s para iniciar WhatsApp Service...');
   setTimeout(() => {
     sessionService.startSession('default').catch(e => console.error('Erro ao iniciar sessão default:', e));
-  }, 10000);
+  }, 5000);
 });
 
 // Tratamento de Processos

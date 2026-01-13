@@ -189,8 +189,8 @@ export function WhatsAppConnect() {
                 <p className="font-semibold mb-1">⚠️ Dica de Solução:</p>
                 <ul className="list-disc pl-4 space-y-1">
                   <li>Se estiver no <strong>Localhost</strong>, verifique se o terminal 'server' está rodando.</li>
-                  <li>Se estiver na <strong>Vercel</strong>, o backend precisa estar hospedado (Render/Railway).</li>
-                  <li>Caso contrário, use o computador local para conectar.</li>
+                  <li>Se estiver no <strong>Render</strong>, aguarde alguns segundos pois o serviço pode estar "dormindo" (Cold Start).</li>
+                  <li>Verifique se o backend está rodando em: <span className="font-mono text-xs">{getApiUrl()}</span></li>
                 </ul>
               </div>
             </div>
