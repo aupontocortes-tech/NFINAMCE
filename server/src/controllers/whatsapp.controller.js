@@ -53,6 +53,11 @@ export const sendMessage = async (req, res) => {
   }
 };
 
+export const getLogs = (req, res) => {
+  const logs = sessionService.getLogs();
+  res.json({ logs });
+};
+
 export const disconnectSession = async (req, res) => {
     const { userId } = req.body;
     if (!userId) return res.status(400).json({ error: 'userId é obrigatório' });

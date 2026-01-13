@@ -84,6 +84,29 @@ export function WhatsAppConnect() {
     return () => clearInterval(interval);
   }, [isOpen]);
 
+  const [showLogs, setShowLogs] = useState(false);
+  const [logs, setLogs] = useState<string[]>([]);
+
+  const fetchLogs = async () => {
+    try {
+      const res = await fetch(`${getApiUrl()}/whatsapp/debug/logs`);
+      if (res.ok) {
+        const json = await res.json();
+        setLogs(json.logs || []);
+      }
+    } catch (e) {
+      console.error('Erro ao buscar logs:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (showLogs && isOpen) {
+      fetchLogs();
+      const interval = setInterval(fetchLogs, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [showLogs, isOpen]);
+
   // Renderização do Conteúdo do Modal
   const renderContent = () => {
     if (loading) {

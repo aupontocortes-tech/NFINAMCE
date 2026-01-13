@@ -8,6 +8,19 @@ class WhatsAppSessionService {
     this.clients = new Map(); // userId -> Client
     this.qrCodes = new Map(); // userId -> Raw QR String
     this.statuses = new Map(); // userId -> 'INITIALIZING' | 'QR_READY' | 'READY' | 'DISCONNECTED' | 'ERROR'
+    this.logs = []; // Logs internos para debug
+  }
+
+  log(message, type = 'info') {
+    const timestamp = new Date().toISOString();
+    const entry = `[${timestamp}] [${type.toUpperCase()}] ${message}`;
+    console.log(entry); // Mantém no console do servidor
+    this.logs.unshift(entry); // Adiciona no início da lista
+    if (this.logs.length > 50) this.logs.pop(); // Mantém apenas os últimos 50 logs
+  }
+
+  getLogs() {
+    return this.logs;
   }
 
   /**
@@ -15,25 +28,27 @@ class WhatsAppSessionService {
    * Se já existir, retorna o status atual, a menos que force=true.
    */
   async startSession(userId, force = false) {
+    this.log(`Solicitação de início de sessão para ${userId} (force=${force})`);
+
     // Se já existe e não é forçado, verifica se está saudável
     if (this.clients.has(userId) && !force) {
       const status = this.statuses.get(userId);
       
       // Se estiver travado em ERROR ou DISCONNECTED, força reinício automaticamente
       if (status === 'ERROR' || status === 'DISCONNECTED') {
-        console.log(`Sessão ${userId} está em ${status}. Forçando reinício...`);
+        this.log(`Sessão ${userId} está em ${status}. Forçando reinício...`, 'warn');
         await this.disconnect(userId); // Garante limpeza
       } else {
-        console.log(`Sessão para ${userId} já existe. Status: ${status}`);
+        this.log(`Sessão para ${userId} já existe. Status: ${status}`);
         return { status, qrCode: this.qrCodes.get(userId) };
       }
     } else if (this.clients.has(userId) && force) {
-      console.log(`Reinício forçado solicitado para ${userId}.`);
+      this.log(`Reinício forçado solicitado para ${userId}.`, 'warn');
       await this.disconnect(userId);
     }
 
     this.updateStatus(userId, 'INITIALIZING');
-    console.log(`Iniciando nova sessão para: ${userId}`);
+    this.log(`Iniciando nova sessão para: ${userId}`);
 
     try {
       const authStrategy = this.repository.getAuthStrategy(userId);
@@ -42,8 +57,9 @@ class WhatsAppSessionService {
       this.setupEvents(client, userId);
       
       // Inicializa sem bloquear a resposta da API imediatamente
+      this.log(`Chamando client.initialize() para ${userId}...`);
       client.initialize().catch(err => {
-        console.error(`Erro fatal na inicialização do cliente ${userId}:`, err);
+        this.log(`Erro fatal na inicialização do cliente ${userId}: ${err.message}`, 'error');
         this.updateStatus(userId, 'ERROR');
         this.clients.delete(userId);
       });
@@ -52,7 +68,7 @@ class WhatsAppSessionService {
       return { status: 'INITIALIZING', message: 'Inicialização iniciada' };
 
     } catch (error) {
-      console.error(`Falha ao configurar sessão ${userId}:`, error);
+      this.log(`Falha ao configurar sessão ${userId}: ${error.message}`, 'error');
       this.updateStatus(userId, 'ERROR');
       throw error;
     }
@@ -63,30 +79,30 @@ class WhatsAppSessionService {
    */
   setupEvents(client, userId) {
     client.on('qr', (qr) => {
-      console.log(`⚡ QR Code recebido para ${userId}`);
+      this.log(`⚡ QR Code recebido para ${userId}`);
       // Armazena o código QR bruto para o frontend gerar o SVG
       this.qrCodes.set(userId, qr);
       this.updateStatus(userId, 'QR_READY');
     });
 
     client.on('ready', () => {
-      console.log(`✅ Sessão ${userId} está PRONTA para uso!`);
+      this.log(`✅ Sessão ${userId} está PRONTA para uso!`);
       this.updateStatus(userId, 'READY');
       this.qrCodes.delete(userId); // Remove o QR Code pois não é mais necessário
     });
 
     client.on('authenticated', () => {
-      console.log(`🔐 Sessão ${userId} autenticada com sucesso.`);
+      this.log(`🔐 Sessão ${userId} autenticada com sucesso.`);
       this.qrCodes.delete(userId); // Remove QR Code assim que autenticar
     });
 
     client.on('auth_failure', (msg) => {
-      console.error(`❌ Falha de autenticação para ${userId}:`, msg);
+      this.log(`❌ Falha de autenticação para ${userId}: ${msg}`, 'error');
       this.updateStatus(userId, 'ERROR');
     });
 
     client.on('disconnected', (reason) => {
-      console.log(`⚠️ Sessão ${userId} desconectada: ${reason}`);
+      this.log(`⚠️ Sessão ${userId} desconectada: ${reason}`, 'warn');
       this.updateStatus(userId, 'DISCONNECTED');
       this.clients.delete(userId);
       this.qrCodes.delete(userId);
@@ -121,15 +137,15 @@ class WhatsAppSessionService {
     const formattedNumber = phoneNumber.replace(/\D/g, '') + '@c.us';
 
     // Aplica um delay aleatório (2s a 5s) para simular comportamento humano (Antiflood)
-    console.log(`⏳ Aguardando delay antiflood para enviar mensagem para ${phoneNumber}...`);
+    this.log(`⏳ Aguardando delay antiflood para enviar mensagem para ${phoneNumber}...`);
     await randomDelay(2000, 5000);
 
     try {
       await client.sendMessage(formattedNumber, message);
-      console.log(`📤 Mensagem enviada para ${phoneNumber} via sessão ${userId}`);
+      this.log(`📤 Mensagem enviada para ${phoneNumber} via sessão ${userId}`);
       return { success: true };
     } catch (error) {
-      console.error(`Erro ao enviar mensagem para ${phoneNumber}:`, error);
+      this.log(`Erro ao enviar mensagem para ${phoneNumber}: ${error.message}`, 'error');
       throw error;
     }
   }

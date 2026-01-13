@@ -31,6 +31,9 @@ router.get('/status/:userId', WhatsAppController.getStatus);
 // Obtém apenas o QR Code (atalho)
 router.get('/qr/:userId', WhatsAppController.getQrCode);
 
+// Obtém logs de debug do servidor
+router.get('/debug/logs', WhatsAppController.getLogs);
+
 // Envia mensagem
 router.post('/send', (req, res) => {
   if (!req.body.userId) {
