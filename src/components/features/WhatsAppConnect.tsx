@@ -304,6 +304,31 @@ export function WhatsAppConnect() {
         </DialogHeader>
         
         {renderContent()}
+
+        <div className="border-t pt-2 mt-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setShowLogs(!showLogs)}
+            className="w-full text-xs text-zinc-500 h-6"
+          >
+            {showLogs ? 'Ocultar Logs' : 'Ver Logs de Debug'}
+          </Button>
+          
+          {showLogs && (
+            <div className="mt-2 bg-black text-green-400 p-2 rounded text-xs font-mono h-32 overflow-y-auto">
+              {logs.length === 0 ? (
+                <p className="text-zinc-500">Nenhum log disponível...</p>
+              ) : (
+                logs.map((log, i) => (
+                  <div key={i} className="border-b border-zinc-800 pb-1 mb-1 last:border-0">
+                    {log}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
         
       </DialogContent>
     </Dialog>
