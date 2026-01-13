@@ -7,17 +7,20 @@ const router = Router();
 const DEFAULT_USER_ID = 'default';
 
 router.get('/status', (req, res) => {
+  req.params = req.params || {};
   req.params.userId = DEFAULT_USER_ID;
   WhatsAppController.getStatus(req, res);
 });
 
 router.post('/restart', (req, res) => {
+  req.body = req.body || {};
   req.body.userId = DEFAULT_USER_ID;
   req.body.force = true; // Força o reinício
   WhatsAppController.startSession(req, res);
 });
 
 router.post('/desconectar', (req, res) => {
+  req.body = req.body || {};
   req.body.userId = DEFAULT_USER_ID;
   WhatsAppController.disconnectSession(req, res);
 });
