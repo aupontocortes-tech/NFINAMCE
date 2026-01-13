@@ -6,7 +6,7 @@ export const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   puppeteer: {
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null,
-    args: [
+    args: process.env.NODE_ENV === 'production' || process.env.RENDER ? [
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
@@ -16,6 +16,6 @@ export const config = {
       '--disable-gpu',
       '--disable-software-rasterizer',
       '--disable-extensions'
-    ]
+    ] : [] // Argumentos mínimos para rodar localmente (Windows/Mac)
   }
 };
