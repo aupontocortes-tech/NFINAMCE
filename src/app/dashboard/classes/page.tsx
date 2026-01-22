@@ -110,7 +110,24 @@ export default function ClassesPage() {
   }, []);
 
   const submit = async () => {
-    if (!form.aluno_id || (!form.data && !form.dia_semana) || !form.hora_inicio || !form.hora_fim) return;
+    // Validações com feedback visual
+    if (!form.aluno_id) {
+      alert("Por favor, selecione um aluno.");
+      return;
+    }
+    if (!form.data && !form.dia_semana) {
+      alert("Por favor, selecione um dia da semana (para aulas fixas) ou uma data específica.");
+      return;
+    }
+    if (!form.hora_inicio) {
+      alert("Por favor, preencha o horário de início.");
+      return;
+    }
+    if (!form.hora_fim) {
+      alert("Por favor, preencha o horário de término.");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch(`${API}/aulas`, {
@@ -129,7 +146,12 @@ export default function ClassesPage() {
         setForm({ aluno_id: "", data: "", dia_semana: "", hora_inicio: "", hora_fim: "", tipo_treino: "" });
         setIsNewAulaOpen(false);
         fetchAulas();
+      } else {
+        const err = await res.json();
+        alert(`Erro ao salvar: ${err.error || "Tente novamente."}`);
       }
+    } catch (error) {
+      alert("Erro de conexão com o servidor.");
     } finally {
       setLoading(false);
     }
