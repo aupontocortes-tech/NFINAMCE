@@ -75,8 +75,8 @@ export default function DashboardPage() {
       </div>
 
       <div className="pt-4">
-        <Button asChild className="w-full h-14 text-lg shadow-md">
-          <Link href="/dashboard/students/new">
+         <Button asChild className="w-full h-14 text-lg shadow-md">
+          <Link href="/dashboard/students/new" prefetch={false}>
             <Plus className="mr-2 h-5 w-5" /> Adicionar Novo Aluno
           </Link>
         </Button>

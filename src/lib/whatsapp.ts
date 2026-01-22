@@ -20,7 +20,12 @@ export const sendWhatsAppMessage = async (student: Student) => {
     });
 
     if (!response.ok) {
-      throw new Error('Falha ao enviar mensagem');
+      let detail = 'Falha ao enviar mensagem';
+      try {
+        const data = await response.json();
+        if (data?.error) detail = data.error;
+      } catch {}
+      throw new Error(detail);
     }
 
     console.log(`[WhatsApp] Enviado para ${student.phone}`);
@@ -31,7 +36,8 @@ export const sendWhatsAppMessage = async (student: Student) => {
 
   } catch (error) {
     console.error('Erro ao enviar mensagem:', error);
-    toast.error(`Erro ao enviar para ${student.name}. Verifique se o backend está conectado.`);
+    const msg = error instanceof Error ? error.message : 'Erro desconhecido';
+    toast.error(`Erro ao enviar para ${student.name}: ${msg}`);
     return false;
   }
 };

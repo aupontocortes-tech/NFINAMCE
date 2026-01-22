@@ -34,7 +34,7 @@ const MOCK_STUDENTS: Student[] = [
     name: 'Carlos Souza',
     phone: '21977777777',
     value: 120,
-    dueDate: new Date().getDate(), // Vence hoje para teste
+    dueDate: 13,
     status: 'pending'
   }
 ];

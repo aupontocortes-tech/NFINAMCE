@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, LogOut, Dumbbell } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, Dumbbell, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WhatsAppConnect } from '@/components/features/WhatsAppConnect';
 
@@ -18,6 +18,7 @@ export default function DashboardLayout({
   const SidebarLink = ({ href, icon: Icon, label }: { href: string; icon: any; label: string }) => (
     <Link
       href={href}
+      prefetch={false}
       className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
         isActive(href) 
           ? 'bg-primary/10 text-primary font-medium shadow-sm' 
@@ -37,17 +38,20 @@ export default function DashboardLayout({
           <div className="bg-primary/10 p-2 rounded-lg">
             <Dumbbell className="text-primary w-6 h-6" />
           </div>
-          <span className="font-bold text-xl text-zinc-900 tracking-tight">NFINANCE</span>
+          <span className="font-bold text-xl text-zinc-900 tracking-tight">NFinance</span>
         </div>
 
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           <SidebarLink href="/dashboard" icon={LayoutDashboard} label="Visão Geral" />
           <SidebarLink href="/dashboard/students" icon={Users} label="Meus Alunos" />
+          {/* Novo item abaixo de Meus Alunos */}
+          <SidebarLink href="/dashboard/classes" icon={Clock} label="Agenda de Aulas" />
+          <SidebarLink href="/dashboard/payments" icon={LayoutDashboard} label="Pagamentos" />
         </nav>
 
         <div className="p-4 border-t border-zinc-200 space-y-3 bg-zinc-50/50">
           <Button variant="outline" className="w-full justify-start gap-3 text-zinc-600 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors" asChild>
-            <Link href="/">
+            <Link href="/" prefetch={false}>
               <LogOut className="w-4 h-4" />
               <span>Sair do Sistema</span>
             </Link>
@@ -62,12 +66,12 @@ export default function DashboardLayout({
         <header className="md:hidden bg-white border-b border-zinc-200 sticky top-0 z-20 px-4 py-3 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-2">
             <Dumbbell className="text-primary w-6 h-6" />
-            <span className="font-bold text-lg">NFINANCE</span>
+            <span className="font-bold text-lg">NFinance</span>
           </div>
           <div className="flex items-center gap-2">
             <WhatsAppConnect />
             <Button variant="ghost" size="icon" asChild>
-              <Link href="/">
+              <Link href="/" prefetch={false}>
                 <LogOut className="w-5 h-5 text-zinc-500" />
               </Link>
             </Button>
@@ -77,7 +81,7 @@ export default function DashboardLayout({
         {/* Header Desktop (apenas visível em telas grandes) */}
         <header className="hidden md:flex bg-white border-b border-zinc-200 sticky top-0 z-20 px-8 py-3 items-center justify-between shadow-sm">
           <h2 className="font-semibold text-lg text-zinc-800">
-             {pathname === '/dashboard' ? 'Visão Geral' : pathname === '/dashboard/students' ? 'Gerenciar Alunos' : 'Dashboard'}
+             {pathname === '/dashboard' ? 'Visão Geral' : pathname === '/dashboard/students' ? 'Gerenciar Alunos' : pathname === '/dashboard/classes' ? 'Agenda de Aulas' : pathname === '/dashboard/payments' ? 'Pagamentos' : 'Dashboard'}
           </h2>
           <div className="flex items-center gap-4">
             <WhatsAppConnect />
@@ -91,13 +95,21 @@ export default function DashboardLayout({
 
         {/* Bottom Navigation Mobile */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-200 pb-safe pt-2 px-6 flex justify-around items-center z-20 safe-area-bottom">
-          <Link href="/dashboard" className={`flex flex-col items-center gap-1 p-2 rounded-lg ${isActive('/dashboard') ? 'text-primary' : 'text-zinc-500'}`}>
+          <Link href="/dashboard" prefetch={false} className={`flex flex-col items-center gap-1 p-2 rounded-lg ${isActive('/dashboard') ? 'text-primary' : 'text-zinc-500'}`}>
             <LayoutDashboard className="w-6 h-6" />
             <span className="text-[10px] font-medium">Início</span>
           </Link>
-          <Link href="/dashboard/students" className={`flex flex-col items-center gap-1 p-2 rounded-lg ${isActive('/dashboard/students') ? 'text-primary' : 'text-zinc-500'}`}>
+          <Link href="/dashboard/students" prefetch={false} className={`flex flex-col items-center gap-1 p-2 rounded-lg ${isActive('/dashboard/students') ? 'text-primary' : 'text-zinc-500'}`}>
             <Users className="w-6 h-6" />
             <span className="text-[10px] font-medium">Alunos</span>
+          </Link>
+          <Link href="/dashboard/classes" prefetch={false} className={`flex flex-col items-center gap-1 p-2 rounded-lg ${isActive('/dashboard/classes') ? 'text-primary' : 'text-zinc-500'}`}>
+            <Clock className="w-6 h-6" />
+            <span className="text-[10px] font-medium">Agenda</span>
+          </Link>
+          <Link href="/dashboard/payments" prefetch={false} className={`flex flex-col items-center gap-1 p-2 rounded-lg ${isActive('/dashboard/payments') ? 'text-primary' : 'text-zinc-500'}`}>
+            <LayoutDashboard className="w-6 h-6" />
+            <span className="text-[10px] font-medium">Pagamentos</span>
           </Link>
         </nav>
       </div>

@@ -4,20 +4,43 @@ import { StudentForm } from '@/components/features/StudentForm';
 import { useAppStore } from '@/lib/store';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { getApiUrl } from '@/lib/utils';
 
 export default function NewStudentPage() {
   const { addStudent } = useAppStore();
   const router = useRouter();
 
-  const handleSubmit = (data: any) => {
+  const handleSubmit = async (data: any) => {
     const newStudent = {
-      id: crypto.randomUUID(), // Nativo do browser/node recente
+      id: crypto.randomUUID(),
       ...data,
       status: 'pending' as const,
     };
-    
+
+    // Atualiza estado local para manter a UI responsiva
     addStudent(newStudent);
-    toast.success('Aluno cadastrado com sucesso!');
+
+    // Persiste no backend (para aparecer em Pagamentos)
+    try {
+      const res = await fetch(`${getApiUrl()}/alunos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: data.name,
+          telefone: data.phone,
+          valor: data.value,
+          plano: 'mensal',
+          status: 'ativo',
+          vencimento: String(data.dueDate), // dia do mês
+        }),
+      });
+      const resp = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(resp.error || 'Falha ao salvar aluno no servidor');
+      toast.success('Aluno cadastrado com sucesso!');
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao salvar aluno no servidor');
+    }
+
     router.push('/dashboard/students');
   };
 

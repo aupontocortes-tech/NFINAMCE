@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NFINANCE - Gestão para Personal Trainers",
+  title: "NFinance - Gestão para Personal Trainers",
   description: "Sistema de cobrança automática e gestão de alunos",
 };
 

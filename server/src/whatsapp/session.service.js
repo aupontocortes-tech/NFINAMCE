@@ -12,6 +12,7 @@ class WhatsAppSessionService {
     this.qrCodes = new Map(); // userId -> Raw QR String
     this.statuses = new Map(); // userId -> Status
     this.logs = []; // Logs internos
+    this.sessions = new Map(); // userId -> Session Info (user, platform, etc)
   }
 
   log(message, type = 'info') {
@@ -35,8 +36,8 @@ class WhatsAppSessionService {
     // Se já existe conexão ativa
     if (this.clients.has(userId) && !force) {
       const status = this.statuses.get(userId);
-      if (status === 'READY' || status === 'QR_READY') {
-        return { status, qrCode: this.qrCodes.get(userId) };
+      if (status === 'CONNECTED' || status === 'QR_READY') {
+        return this.getStatus(userId);
       }
     }
 
@@ -92,16 +93,30 @@ class WhatsAppSessionService {
         }
       } else if (connection === 'open') {
         this.log(`✅ Conexão aberta/autenticada para ${userId}`);
-        this.updateStatus(userId, 'READY');
+        this.updateStatus(userId, 'CONNECTED');
         this.qrCodes.delete(userId);
+
+        // Salva informações da sessão para o frontend
+        const user = sock.user;
+        this.sessions.set(userId, {
+            user: user?.id || 'Desconhecido',
+            pushname: user?.name || user?.notify || 'Usuário',
+            platform: 'Baileys/Web',
+            connectedAt: new Date().toISOString()
+        });
       }
     });
   }
 
   getStatus(userId) {
+    const status = this.statuses.get(userId) || 'DISCONNECTED';
+    const qrCode = this.qrCodes.get(userId) || null;
+    const session = this.sessions.get(userId) || null;
+
     return {
-      status: this.statuses.get(userId) || 'DISCONNECTED',
-      qrCode: this.qrCodes.get(userId) || null
+      status,
+      qrCode,
+      session
     };
   }
 
@@ -109,12 +124,16 @@ class WhatsAppSessionService {
     const sock = this.clients.get(userId);
     const status = this.statuses.get(userId);
 
-    if (!sock || status !== 'READY') {
+    if (!sock || status !== 'CONNECTED') {
       throw new Error(`Sessão offline. Status: ${status}`);
     }
 
-    // Formata número para JID do Baileys (apenas números + @s.whatsapp.net)
-    const jid = phoneNumber.replace(/\D/g, '') + '@s.whatsapp.net';
+    const digits = phoneNumber.replace(/\D/g, '');
+    const withCountry = digits.startsWith('55') ? digits : `55${digits}`;
+    if (withCountry.length < 12) {
+      throw new Error('Telefone inválido. Use DDD e número com 9 dígitos.');
+    }
+    const jid = `${withCountry}@s.whatsapp.net`;
 
     this.log(`⏳ Aguardando delay antiflood...`);
     await randomDelay(2000, 5000);
@@ -140,12 +159,9 @@ class WhatsAppSessionService {
       this.clients.delete(userId);
     }
     
-    // Opcional: Limpar pasta de auth se for um "Logout" real
-    // const authPath = path.resolve('baileys_auth_info', userId);
-    // if (fs.existsSync(authPath)) fs.rmSync(authPath, { recursive: true, force: true });
-    
     this.statuses.set(userId, 'DISCONNECTED');
     this.qrCodes.delete(userId);
+    this.sessions.delete(userId);
     return true;
   }
 }

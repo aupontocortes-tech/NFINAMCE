@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { getApiUrl } from '@/lib/utils';
+import { sendWhatsAppMessage } from '@/lib/whatsapp';
 
 export default function StudentsPage() {
   const { students, markAsPaid, deleteStudent } = useAppStore();
@@ -151,6 +152,14 @@ export default function StudentsPage() {
                     <Check className="w-4 h-4 mr-1" /> Pago
                   </Button>
                 )}
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => sendWhatsAppMessage(student)}
+                >
+                  <Send className="w-4 h-4 mr-1" /> Enviar Mensagem
+                </Button>
                 <Button size="sm" variant="outline" asChild className="flex-1">
                   <Link href={`/dashboard/students/${student.id}`}>
                     <Edit className="w-4 h-4 mr-1" /> Editar

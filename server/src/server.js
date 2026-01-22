@@ -2,9 +2,15 @@ import express from 'express';
 import cors from 'cors';
 import { config } from './config/env.js';
 import whatsappRoutes from './routes/whatsapp.routes.js';
-import alunosRoutes from './routes/alunos.routes.js';
+import studentsRoutes from './routes/students.routes.js';
+import aulasRoutes from './routes/aulas.routes.js';
+import chargesRoutes from './routes/charges.routes.js';
+import paymentsRoutes from './routes/payments.routes.js';
 import { iniciarCron } from './services/cron.service.js';
 import { sessionService } from './whatsapp/session.service.js';
+import { initSchema } from './data/db.js';
+import { importInitialSpreadsheetIfNeeded } from './services/import.service.js';
+import { runInitialSeed2026 } from './services/seed2026.service.js';
 
 const app = express();
 
@@ -12,9 +18,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Inicializa DB e importação inicial
+initSchema();
+importInitialSpreadsheetIfNeeded();
+runInitialSeed2026();
+
 // Rotas
 app.use('/whatsapp', whatsappRoutes);
-app.use('/', alunosRoutes);
+app.use('/', studentsRoutes);
+app.use('/', aulasRoutes);
+app.use('/', chargesRoutes);
+app.use('/', paymentsRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {
@@ -23,7 +37,7 @@ app.get('/health', (req, res) => {
 
 // Root
 app.get('/', (req, res) => {
-  res.send('NFINANCE Backend V2 (Layered Architecture) is running! 🚀');
+  res.send('NFinance Backend V2 (Layered Architecture) is running! 🚀');
 });
 
 // Tratamento global de erros
