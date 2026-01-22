@@ -2,7 +2,9 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, Dumbbell } from "lucide-react";
+import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import {
   Dialog,
   DialogContent,
@@ -69,7 +71,14 @@ export default function ClassesPage() {
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [aulas, setAulas] = useState<Aula[]>([]);
   const [loading, setLoading] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [isNewAulaOpen, setIsNewAulaOpen] = useState(false);
+
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Começa na segunda-feira
+
+  const nextWeek = () => setCurrentDate(addWeeks(currentDate, 1));
+  const prevWeek = () => setCurrentDate(subWeeks(currentDate, 1));
+  const resetWeek = () => setCurrentDate(new Date());
   
   const [form, setForm] = useState({
     aluno_id: "",
@@ -168,17 +177,21 @@ export default function ClassesPage() {
     }
   };
 
-  const getAulasForCell = (dayKey: string, hour: string) => {
+  const getAulasForCell = (dayKey: string, hour: string, date: Date) => {
     const hourInt = parseInt(hour.split(":")[0]);
+    const dateStr = format(date, "yyyy-MM-dd");
     
     return aulas.filter((a) => {
-      // Verifica o dia
-      if (a.dia_semana !== dayKey) return false;
-      
-      // Verifica a hora (simples: considera se a hora de início bate com a linha)
-      // Idealmente, poderíamos verificar intervalos, mas para grade simples, match exato de hora início funciona bem
       const aulaHour = parseInt(a.hora_inicio.split(":")[0]);
-      return aulaHour === hourInt;
+      if (aulaHour !== hourInt) return false;
+
+      // Se for aula recorrente
+      if (a.dia_semana === dayKey && !a.data) return true;
+
+      // Se for aula de data específica
+      if (a.data === dateStr) return true;
+
+      return false;
     });
   };
 
@@ -188,17 +201,22 @@ export default function ClassesPage() {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-zinc-200">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900">Agenda de Aulas</h1>
-          <p className="text-zinc-500 text-sm mt-1">Visão semanal das aulas recorrentes.</p>
+          <p className="text-zinc-500 text-sm mt-1">Visão semanal das aulas recorrentes e específicas.</p>
         </div>
         
         <div className="flex items-center gap-3">
-            {/* Simulando navegação de datas para visual apenas, já que o foco é agenda recorrente */}
-            <div className="hidden md:flex items-center bg-white border border-zinc-200 rounded-md shadow-sm mr-4">
-                <Button variant="ghost" size="icon" className="h-9 w-9 text-zinc-500 hover:text-primary">
+            {/* Navegação de Datas */}
+            <div className="flex items-center bg-white border border-zinc-200 rounded-md shadow-sm mr-4">
+                <Button variant="ghost" size="icon" className="h-9 w-9 text-zinc-500 hover:text-primary" onClick={prevWeek}>
                     <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <span className="px-4 text-sm font-medium text-zinc-700">Semana Atual</span>
-                <Button variant="ghost" size="icon" className="h-9 w-9 text-zinc-500 hover:text-primary">
+                <div className="px-4 text-sm font-medium text-zinc-700 flex flex-col items-center leading-tight cursor-pointer" onClick={resetWeek}>
+                   <span>{format(weekStart, "d MMM", { locale: ptBR })} - {format(addDays(weekStart, 5), "d MMM", { locale: ptBR })}</span>
+                   {isSameDay(new Date(), currentDate) || isSameDay(startOfWeek(new Date(), { weekStartsOn: 1 }), weekStart) ? (
+                      <span className="text-[10px] text-green-600 font-bold">Semana Atual</span>
+                   ) : null}
+                </div>
+                <Button variant="ghost" size="icon" className="h-9 w-9 text-zinc-500 hover:text-primary" onClick={nextWeek}>
                     <ChevronRight className="w-4 h-4" />
                 </Button>
             </div>
@@ -294,72 +312,99 @@ export default function ClassesPage() {
         </div>
       </header>
 
-      {/* Grade de Horários */}
-      <div className="bg-white rounded-lg shadow-sm border border-zinc-200 overflow-hidden">
-        {/* Cabeçalho da Tabela */}
-        <div className="grid grid-cols-[80px_1fr_1fr_1fr_1fr_1fr_1fr] border-b border-zinc-200 bg-zinc-50">
-            <div className="p-4 text-center text-sm font-semibold text-zinc-500 border-r border-zinc-200">
-                Horário
-            </div>
-            {WEEK_DAYS.map((day) => (
-                <div key={day.key} className="p-4 text-center text-sm font-bold text-zinc-700 border-r border-zinc-200 last:border-r-0">
-                    {day.label}
+      {/* Tabela Semanal (Grid) */}
+      <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden overflow-x-auto">
+        <div className="min-w-[800px] grid grid-cols-[80px_repeat(6,1fr)] divide-x divide-zinc-200">
+          
+          {/* Header da Tabela */}
+          <div className="bg-zinc-50 p-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider text-center sticky left-0 z-10 border-b border-zinc-200 flex items-center justify-center">
+            Horário
+          </div>
+          {WEEK_DAYS.map((day, index) => {
+            const date = addDays(weekStart, index);
+            const isToday = isSameDay(new Date(), date);
+            
+            return (
+              <div key={day.key} className={`bg-zinc-50 p-3 text-center border-b border-zinc-200 ${isToday ? "bg-blue-50/50" : ""}`}>
+                <div className={`text-xs font-semibold uppercase tracking-wider ${isToday ? "text-blue-700" : "text-zinc-500"}`}>
+                  {day.label}
                 </div>
-            ))}
-        </div>
+                <div className={`text-xs mt-1 ${isToday ? "text-blue-600 font-bold" : "text-zinc-400"}`}>
+                  {format(date, "dd/MM")}
+                </div>
+              </div>
+            );
+          })}
 
-        {/* Corpo da Tabela */}
-        <div className="divide-y divide-zinc-200">
-            {HOURS.map((hour) => (
-                <div key={hour} className="grid grid-cols-[80px_1fr_1fr_1fr_1fr_1fr_1fr] min-h-[80px]">
-                    {/* Coluna de Hora */}
-                    <div className="p-3 flex items-center justify-center text-sm font-medium text-zinc-500 bg-zinc-50/50 border-r border-zinc-200">
-                        {hour}
-                    </div>
+          {/* Corpo da Tabela */}
+          {HOURS.map((hour) => (
+            <React.Fragment key={hour}>
+              {/* Coluna de Hora */}
+              <div className="p-2 text-xs font-medium text-zinc-500 text-center border-b border-zinc-100 bg-zinc-50/50 sticky left-0 z-10 flex items-center justify-center">
+                {hour}
+              </div>
 
-                    {/* Colunas dos Dias */}
-                    {WEEK_DAYS.map((day) => {
-                        const aulasDoHorario = getAulasForCell(day.key, hour);
+              {/* Células dos Dias */}
+              {WEEK_DAYS.map((day, index) => {
+                const date = addDays(weekStart, index);
+                const cellAulas = getAulasForCell(day.key, hour, date);
+                const isToday = isSameDay(new Date(), date);
+
+                return (
+                  <div key={`${day.key}-${hour}`} className={`min-h-[100px] p-1 border-b border-zinc-100 relative group transition-colors ${isToday ? "bg-blue-50/10" : "hover:bg-zinc-50/50"}`}>
+                    <div className="flex flex-col gap-1 h-full">
+                      {cellAulas.map((aula) => {
+                        const aluno = alunos.find((a) => a.id === aula.aluno_id);
                         return (
-                            <div key={`${day.key}-${hour}`} className="p-1 border-r border-zinc-100 last:border-r-0 relative group hover:bg-zinc-50 transition-colors">
-                                {aulasDoHorario.map((aula) => {
-                                    const aluno = alunos.find(a => a.id === aula.aluno_id);
-                                    return (
-                                        <div 
-                                            key={aula.id} 
-                                            className={`
-                                                ${getCardColor(aula.aluno_id)} 
-                                                p-2 rounded-md border mb-1 cursor-pointer shadow-sm relative group/card
-                                            `}
-                                        >
-                                            <div className="font-semibold text-xs md:text-sm truncate text-zinc-800">
-                                                {aluno?.nome || "Desconhecido"}
-                                            </div>
-                                            {aula.tipo_treino && (
-                                                <div className="text-[10px] text-zinc-500 truncate mt-0.5">
-                                                    {aula.tipo_treino}
-                                                </div>
-                                            )}
-                                            
-                                            {/* Botão de excluir aparece no hover */}
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    remove(aula.id);
-                                                }}
-                                                className="absolute top-1 right-1 opacity-0 group-hover/card:opacity-100 p-1 hover:bg-white rounded-full text-zinc-400 hover:text-red-500 transition-all"
-                                                title="Remover aula"
-                                            >
-                                                <Trash2 className="w-3 h-3" />
-                                            </button>
-                                        </div>
-                                    );
-                                })}
+                          <div 
+                            key={aula.id} 
+                            className={`rounded-md p-2 border shadow-sm text-left relative group/card transition-all hover:shadow-md ${getCardColor(aula.aluno_id)}`}
+                          >
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); remove(aula.id); }}
+                                className="absolute top-1 right-1 opacity-0 group-hover/card:opacity-100 transition-opacity p-1 hover:bg-white/50 rounded-full text-red-500"
+                                title="Remover aula"
+                            >
+                                <Trash2 className="w-3 h-3" />
+                            </button>
+                            
+                            <div className="flex items-center gap-1.5 mb-1">
+                                <Clock className="w-3 h-3 text-zinc-500" />
+                                <span className="text-[10px] font-medium text-zinc-600">
+                                    {aula.hora_inicio} - {aula.hora_fim}
+                                </span>
                             </div>
+
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                                <User className="w-3 h-3 text-zinc-500" />
+                                <div className="font-semibold text-xs md:text-sm truncate text-zinc-800 leading-tight">
+                                    {aluno?.nome || "Desconhecido"}
+                                </div>
+                            </div>
+                            
+                            {aula.tipo_treino && (
+                                <div className="flex items-center gap-1.5 mt-1 pt-1 border-t border-black/5">
+                                    <Dumbbell className="w-3 h-3 text-zinc-400" />
+                                    <div className="text-[10px] text-zinc-600 truncate font-medium">
+                                        {aula.tipo_treino}
+                                    </div>
+                                </div>
+                            )}
+
+                            {aula.data && (
+                                <div className="absolute bottom-1 right-1">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" title="Aula em data específica"></div>
+                                </div>
+                            )}
+                          </div>
                         );
-                    })}
-                </div>
-            ))}
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </React.Fragment>
+          ))}
         </div>
       </div>
 
