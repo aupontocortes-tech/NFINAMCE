@@ -19,8 +19,8 @@ function readSpreadsheet(filePath) {
   return xlsx.utils.sheet_to_json(sheet, { defval: '' });
 }
 
-export function importInitialSpreadsheetIfNeeded(projectRoot = process.cwd()) {
-  if (hasStudents()) return { imported: 0, schedules: 0 };
+export async function importInitialSpreadsheetIfNeeded(projectRoot = process.cwd()) {
+  if (await hasStudents()) return { imported: 0, schedules: 0 };
   const expectedDir = path.join(projectRoot, 'data');
   const possibleFiles = ['alunos.xlsx', 'alunos.csv'];
   const foundFile = possibleFiles.find((f) => fs.existsSync(path.join(expectedDir, f)));
@@ -30,21 +30,23 @@ export function importInitialSpreadsheetIfNeeded(projectRoot = process.cwd()) {
   const filePath = path.join(expectedDir, foundFile);
   const rows = readSpreadsheet(filePath).map(normalizeRow).filter((r) => r.nome);
 
-  const insertStmt = db.prepare(
-    'INSERT INTO alunos (nome, telefone, plano, valor, status) VALUES (?, ?, ?, ?, ?)'
-  );
-
-  db.transaction(() => {
+  await db.transaction(async (trx) => {
     for (const r of rows) {
-      insertStmt.run(r.nome, r.telefone, r.plano, r.valor, r.status);
+      await trx('alunos').insert({
+        nome: r.nome,
+        telefone: r.telefone,
+        plano: r.plano,
+        valor: r.valor,
+        status: r.status
+      });
     }
-  })();
+  });
 
-  const schedResult = importSchedulesIfFound(projectRoot);
+  const schedResult = await importSchedulesIfFound(projectRoot);
   return { imported: rows.length, schedules: schedResult };
 }
 
-function importSchedulesIfFound(projectRoot = process.cwd()) {
+async function importSchedulesIfFound(projectRoot = process.cwd()) {
   const dir = path.join(projectRoot, 'data');
   const possibleScheduleFiles = ['aulas.xlsx', 'horarios.xlsx', 'agenda.xlsx', 'classes.xlsx'];
   const file = possibleScheduleFiles.find((f) => fs.existsSync(path.join(dir, f)));
@@ -52,16 +54,13 @@ function importSchedulesIfFound(projectRoot = process.cwd()) {
   const fp = path.join(dir, file);
   const rows = readSpreadsheet(fp);
 
+  const students = await db('alunos').select('id', 'nome');
   const studentsByName = new Map(
-    db.prepare('SELECT id, nome FROM alunos').all().map((s) => [s.nome.trim().toLowerCase(), s.id])
-  );
-
-  const insertClass = db.prepare(
-    'INSERT INTO aulas (aluno_id, data, horas, descricao) VALUES (?, ?, ?, ?)'
+    students.map((s) => [s.nome.trim().toLowerCase(), s.id])
   );
 
   let count = 0;
-  db.transaction(() => {
+  await db.transaction(async (trx) => {
     for (const r of rows) {
       const nome = (r.nome || r.aluno || '').trim().toLowerCase();
       const alunoId = studentsByName.get(nome);
@@ -69,10 +68,18 @@ function importSchedulesIfFound(projectRoot = process.cwd()) {
       const data = r.data || r.date || '';
       const horas = Number(r.horas || r.duracao || r.duration || 1);
       const descricao = (r.descricao || r.obs || '').trim();
-      insertClass.run(alunoId, data, horas, descricao);
+      
+      await trx('aulas').insert({
+        aluno_id: alunoId,
+        data: data,
+        horas: horas, // check schema if 'horas' or 'descricao' columns match. Schema has 'horas' (float), 'observacoes' (text).
+        observacoes: descricao
+        // Note: schema has 'data', 'hora_inicio', 'hora_fim'. import seems to rely on 'data' and 'horas'? 
+        // Checking initSchema: 'horas' float, 'observacoes' text. 'data' string.
+      });
       count++;
     }
-  })();
+  });
 
   return count;
 }

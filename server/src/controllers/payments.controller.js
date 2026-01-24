@@ -1,6 +1,6 @@
 import { db } from '../data/db.js';
 
-export const list = (req, res) => {
+export const list = async (req, res) => {
   try {
     const userId = req.user.id;
     const { month } = req.query; // Format: YYYY-MM
@@ -14,23 +14,24 @@ export const list = (req, res) => {
       ano = today.getFullYear();
     }
 
-    const payments = db.prepare(`
-      SELECT 
-        p.id, 
-        p.valor, 
-        p.data_vencimento, 
-        p.status, 
-        p.mes, 
-        p.ano,
-        p.data_pagamento,
-        p.metodo_pagamento,
-        a.nome as aluno_nome,
-        a.email as aluno_email
-      FROM pagamentos p
-      JOIN alunos a ON p.aluno_id = a.id
-      WHERE a.user_id = ? AND p.mes = ? AND p.ano = ?
-      ORDER BY p.data_vencimento ASC
-    `).all(userId, mes, ano);
+    const payments = await db('pagamentos as p')
+      .join('alunos as a', 'p.aluno_id', 'a.id')
+      .where('a.user_id', userId)
+      .where('p.mes', mes)
+      .where('p.ano', ano)
+      .select(
+        'p.id', 
+        'p.valor', 
+        'p.data_vencimento', 
+        'p.status', 
+        'p.mes', 
+        'p.ano', 
+        'p.data_pagamento',
+        'p.metodo as metodo_pagamento',
+        'a.nome as aluno_nome',
+        'a.email as aluno_email'
+      )
+      .orderBy('p.data_vencimento', 'asc');
 
     res.json(payments);
   } catch (e) {
@@ -39,19 +40,19 @@ export const list = (req, res) => {
   }
 };
 
-export const markAsPaid = (req, res) => {
+export const markAsPaid = async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
     const { metodo } = req.body; // 'pix', 'dinheiro', 'cartao', etc.
 
     // Verify if payment belongs to a student of this user
-    const payment = db.prepare(`
-      SELECT p.* 
-      FROM pagamentos p
-      JOIN alunos a ON p.aluno_id = a.id
-      WHERE p.id = ? AND a.user_id = ?
-    `).get(id, userId);
+    const payment = await db('pagamentos as p')
+      .join('alunos as a', 'p.aluno_id', 'a.id')
+      .where('p.id', id)
+      .where('a.user_id', userId)
+      .select('p.*')
+      .first();
 
     if (!payment) {
       return res.status(404).json({ error: 'Pagamento não encontrado ou sem permissão' });
@@ -59,11 +60,11 @@ export const markAsPaid = (req, res) => {
 
     const todayStr = new Date().toISOString().split('T')[0];
 
-    db.prepare(`
-      UPDATE pagamentos 
-      SET status = 'pago', data_pagamento = ?, metodo_pagamento = ?
-      WHERE id = ?
-    `).run(todayStr, metodo || 'outros', id);
+    await db('pagamentos').where({ id }).update({
+      status: 'pago',
+      data_pagamento: todayStr,
+      metodo: metodo || 'outros'
+    });
 
     res.json({ success: true, message: 'Pagamento marcado como pago' });
   } catch (e) {

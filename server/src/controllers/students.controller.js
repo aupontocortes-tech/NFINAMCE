@@ -1,17 +1,24 @@
 import { db } from '../data/db.js';
 
-export const list = (req, res) => {
+export const list = async (req, res) => {
   const userId = req.user.id;
-  const rows = db.prepare('SELECT * FROM alunos WHERE user_id = ? ORDER BY nome').all(userId);
-  res.json(rows);
+  try {
+    const rows = await db('alunos').where({ user_id: userId }).orderBy('nome');
+    res.json(rows);
+  } catch (error) {
+    console.error('Erro ao listar alunos:', error);
+    res.status(500).json({ error: 'Erro ao listar alunos.' });
+  }
 };
 
-export const create = (req, res) => {
+export const create = async (req, res) => {
   try {
     const userId = req.user.id;
     
     // Verificar limite de 3 alunos
-    const count = db.prepare('SELECT COUNT(*) as count FROM alunos WHERE user_id = ?').get(userId).count;
+    const result = await db('alunos').count('* as count').where({ user_id: userId }).first();
+    const count = Number(result.count);
+    
     if (count >= 3) {
       return res.status(403).json({ error: 'Limite de 3 alunos atingido no plano gratuito.' });
     }
@@ -22,22 +29,32 @@ export const create = (req, res) => {
       return res.status(400).json({ error: 'Campos obrigatórios: nome, valor' });
     }
 
-    const info = db.prepare(`
-      INSERT INTO alunos (user_id, nome, email, telefone, valor, plano, vencimento, status, mensagem_cobranca) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      userId,
-      nome, 
-      email || null, 
-      telefone || '', 
-      Number(valor), 
-      (plano || 'mensal').toLowerCase(), 
-      (vencimento ?? 5), 
-      status || 'ativo',
-      customMessage || null
-    );
+    const alunoData = {
+        user_id: userId,
+        nome,
+        email: email || null,
+        telefone: telefone || '',
+        valor: Number(valor),
+        plano: (plano || 'mensal').toLowerCase(),
+        vencimento: (vencimento ?? 5),
+        status: status || 'ativo',
+        mensagem_cobranca: customMessage || null
+    };
+
+    // Insert and get result
+    // Knex .returning('*') works for PG. For SQLite it depends on support.
+    const [inserted] = await db('alunos').insert(alunoData).returning('*');
     
-    const aluno = db.prepare('SELECT * FROM alunos WHERE id = ?').get(info.lastInsertRowid);
+    let aluno = inserted;
+    // Fallback for SQLite if it returns just ID or nothing (though recent knex/better-sqlite3 supports returning)
+    if (!aluno || typeof aluno === 'number' || typeof aluno === 'string') {
+        if (typeof inserted === 'number' || typeof inserted === 'string') {
+            aluno = await db('alunos').where({ id: inserted }).first();
+        } else {
+             // Try to find the latest for this user
+             aluno = await db('alunos').where({ user_id: userId }).orderBy('id', 'desc').first();
+        }
+    }
     
     // Criar pagamento pendente para o mês atual
     try {
@@ -49,10 +66,14 @@ export const create = (req, res) => {
       const diaVenc = aluno.vencimento || 5;
       const dataVencimento = new Date(ano, mes - 1, diaVenc).toISOString().split('T')[0];
 
-      db.prepare(`
-        INSERT INTO pagamentos (aluno_id, valor, data_vencimento, status, mes, ano) 
-        VALUES (?, ?, ?, 'pendente', ?, ?)
-      `).run(aluno.id, Number(aluno.valor), dataVencimento, mes, ano);
+      await db('pagamentos').insert({
+        aluno_id: aluno.id,
+        valor: Number(aluno.valor),
+        data_vencimento: dataVencimento,
+        status: 'pendente',
+        mes,
+        ano
+      });
     } catch (chargeErr) {
       console.error('Aviso: Falha ao criar pagamento inicial:', chargeErr.message);
     }
@@ -64,40 +85,47 @@ export const create = (req, res) => {
   }
 };
 
-export const update = (req, res) => {
+export const update = async (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;
   
-  const existing = db.prepare('SELECT * FROM alunos WHERE id = ? AND user_id = ?').get(id, userId);
-  if (!existing) return res.status(404).json({ error: 'Aluno não encontrado' });
-  
-  const { nome, email, telefone, valor, plano, status, vencimento } = req.body;
-  
-  db.prepare(`
-    UPDATE alunos 
-    SET nome = ?, email = ?, telefone = ?, valor = ?, plano = ?, vencimento = ?, status = ? 
-    WHERE id = ? AND user_id = ?
-  `).run(
-      nome ?? existing.nome,
-      email ?? existing.email,
-      telefone ?? existing.telefone,
-      valor ?? existing.valor,
-      (plano ?? existing.plano),
-      (vencimento ?? existing.vencimento),
-      status ?? existing.status,
-      id,
-      userId
-    );
-    
-  const row = db.prepare('SELECT * FROM alunos WHERE id = ?').get(id);
-  res.json(row);
+  try {
+      const existing = await db('alunos').where({ id, user_id: userId }).first();
+      if (!existing) return res.status(404).json({ error: 'Aluno não encontrado' });
+      
+      const { nome, email, telefone, valor, plano, status, vencimento, customMessage } = req.body;
+      
+      const updateData = {
+          nome: nome ?? existing.nome,
+          email: email ?? existing.email,
+          telefone: telefone ?? existing.telefone,
+          valor: valor ?? existing.valor,
+          plano: (plano ?? existing.plano),
+          vencimento: (vencimento ?? existing.vencimento),
+          status: status ?? existing.status,
+          mensagem_cobranca: customMessage !== undefined ? customMessage : existing.mensagem_cobranca
+      };
+
+      await db('alunos').where({ id, user_id: userId }).update(updateData);
+        
+      const row = await db('alunos').where({ id }).first();
+      res.json(row);
+  } catch (e) {
+      console.error('Erro ao atualizar aluno:', e);
+      res.status(500).json({ error: 'Erro ao atualizar aluno' });
+  }
 };
 
-export const remove = (req, res) => {
+export const remove = async (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;
   
-  const info = db.prepare('DELETE FROM alunos WHERE id = ? AND user_id = ?').run(id, userId);
-  if (info.changes === 0) return res.status(404).json({ error: 'Aluno não encontrado' });
-  res.status(204).send();
+  try {
+      const count = await db('alunos').where({ id, user_id: userId }).del();
+      if (count === 0) return res.status(404).json({ error: 'Aluno não encontrado' });
+      res.status(204).send();
+  } catch (e) {
+      console.error('Erro ao remover aluno:', e);
+      res.status(500).json({ error: 'Erro ao remover aluno' });
+  }
 };

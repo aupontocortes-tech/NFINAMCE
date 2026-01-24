@@ -18,11 +18,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Inicializa DB e importação inicial
-initSchema();
-// importInitialSpreadsheetIfNeeded(); // Desativado temporariamente na V3
-// runInitialSeed2026(); // Desativado temporariamente na V3
-
 // Rotas
 app.use('/auth', authRoutes);
 app.use('/', studentsRoutes);
@@ -47,13 +42,23 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Erro interno do servidor' });
 });
 
-// Inicialização
-app.listen(config.port, () => {
-  console.log(`\n🚀 Servidor V3 rodando em http://localhost:${config.port}`);
-  console.log(`📝 API Alunos: http://localhost:${config.port}/alunos`);
+// Inicializa DB e importação inicial
+initSchema().then(async () => {
+  try {
+    // Tenta rodar seed/importação se necessário
+    await runInitialSeed2026();
+  } catch (err) {
+    console.error('Erro na inicialização de dados (Seed/Import):', err);
+  }
 
-  // Inicia o agendamento de tarefas
-  iniciarCron();
+  // Inicialização
+  app.listen(config.port, () => {
+    console.log(`\n🚀 Servidor V3 rodando em http://localhost:${config.port}`);
+    console.log(`📝 API Alunos: http://localhost:${config.port}/alunos`);
+
+    // Inicia o agendamento de tarefas
+    iniciarCron();
+  });
 });
 
 // Tratamento de Processos

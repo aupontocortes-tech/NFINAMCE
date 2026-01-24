@@ -1,133 +1,121 @@
-import Database from 'better-sqlite3';
+import knex from 'knex';
 import path from 'path';
 import fs from 'fs';
 
-const dataDir = path.resolve(process.cwd(), 'data');
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.DATABASE_URL;
 
-const dbPath = path.join(dataDir, 'app.db');
-export const db = new Database(dbPath);
+const config = isProduction 
+  ? {
+      client: 'pg',
+      connection: {
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+      }
+    }
+  : {
+      client: 'better-sqlite3',
+      connection: {
+        filename: path.resolve(process.cwd(), 'data', 'app.db')
+      },
+      useNullAsDefault: true
+    };
 
-// Enable foreign keys
-try {
-  db.pragma('foreign_keys = ON');
-} catch {}
-
-function columnExists(table, column) {
-  try {
-    const rows = db.prepare(`PRAGMA table_info(${table})`).all();
-    return rows.some(r => r.name === column);
-  } catch {
-    return false;
-  }
+// Ensure data dir exists for sqlite
+if (!isProduction && config.connection.filename) {
+    const dataDir = path.dirname(config.connection.filename);
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 }
 
-export const hasStudents = () => {
+export const db = knex(config);
+
+export const hasStudents = async () => {
   try {
-    const row = db.prepare('SELECT count(*) as count FROM alunos').get();
-    return row.count > 0;
+    const result = await db('alunos').count('* as count').first();
+    // knex .count() returns { count: '5' } or { count: 5 } depending on driver
+    return Number(result.count) > 0;
   } catch (e) {
     return false;
   }
 };
 
-export const initSchema = () => {
-  // 1. Users (Professores)
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      created_at TEXT DEFAULT (datetime('now'))
-    );
-  `);
-
-  // 2. Alunos (Students)
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS alunos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-      nome TEXT NOT NULL,
-      email TEXT,
-      telefone TEXT,
-      tipo TEXT NOT NULL DEFAULT 'presencial',
-      plano TEXT NOT NULL,
-      valor REAL NOT NULL,
-      vencimento INTEGER, -- Dia do vencimento (1-31)
-      status TEXT NOT NULL DEFAULT 'ativo',
-      created_at TEXT DEFAULT (datetime('now'))
-    );
-  `);
-
-  // Migration: Add user_id to alunos if missing
-  if (!columnExists('alunos', 'user_id')) {
-    try {
-      db.exec(`ALTER TABLE alunos ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE CASCADE`);
-    } catch (e) {
-      console.error('Migration Error (alunos.user_id):', e.message);
+export const initSchema = async () => {
+  try {
+    // 1. Users
+    if (!(await db.schema.hasTable('users'))) {
+      await db.schema.createTable('users', table => {
+        table.increments('id');
+        table.string('name').notNullable();
+        table.string('email').unique().notNullable();
+        table.string('password').notNullable();
+        table.timestamp('created_at').defaultTo(db.fn.now());
+      });
     }
+
+    // 2. Alunos
+    if (!(await db.schema.hasTable('alunos'))) {
+      await db.schema.createTable('alunos', table => {
+        table.increments('id');
+        table.integer('user_id').references('id').inTable('users').onDelete('CASCADE');
+        table.string('nome').notNullable();
+        table.string('email');
+        table.string('telefone');
+        table.string('tipo').notNullable().defaultTo('presencial');
+        table.string('plano').notNullable();
+        table.float('valor').notNullable();
+        table.integer('vencimento');
+        table.string('status').notNullable().defaultTo('ativo');
+        table.string('mensagem_cobranca');
+        table.timestamp('created_at').defaultTo(db.fn.now());
+      });
+    } else {
+      // Migrations
+      const hasUserId = await db.schema.hasColumn('alunos', 'user_id');
+      if (!hasUserId) await db.schema.alterTable('alunos', t => t.integer('user_id').references('id').inTable('users').onDelete('CASCADE'));
+      
+      const hasEmail = await db.schema.hasColumn('alunos', 'email');
+      if (!hasEmail) await db.schema.alterTable('alunos', t => t.string('email'));
+      
+      const hasMsg = await db.schema.hasColumn('alunos', 'mensagem_cobranca');
+      if (!hasMsg) await db.schema.alterTable('alunos', t => t.string('mensagem_cobranca'));
+    }
+
+    // 3. Aulas
+    if (!(await db.schema.hasTable('aulas'))) {
+      await db.schema.createTable('aulas', table => {
+        table.increments('id');
+        table.integer('aluno_id').notNullable().references('id').inTable('alunos').onDelete('CASCADE');
+        table.string('data'); // YYYY-MM-DD
+        table.string('dia_semana');
+        table.string('hora_inicio').notNullable();
+        table.string('hora_fim').notNullable();
+        table.float('horas');
+        table.string('tipo_treino');
+        table.text('observacoes');
+        table.timestamp('created_at').defaultTo(db.fn.now());
+      });
+    } else {
+      const hasData = await db.schema.hasColumn('aulas', 'data');
+      if (!hasData) await db.schema.alterTable('aulas', t => t.string('data'));
+    }
+
+    // 4. Pagamentos
+    if (!(await db.schema.hasTable('pagamentos'))) {
+      await db.schema.createTable('pagamentos', table => {
+        table.increments('id');
+        table.integer('aluno_id').notNullable().references('id').inTable('alunos').onDelete('CASCADE');
+        table.float('valor').notNullable();
+        table.string('data_vencimento').notNullable();
+        table.string('data_pagamento');
+        table.string('status').notNullable().defaultTo('pendente');
+        table.integer('mes').notNullable();
+        table.integer('ano').notNullable();
+        table.string('metodo');
+        table.timestamp('created_at').defaultTo(db.fn.now());
+      });
+    }
+
+    console.log(`✅ Schema initialized (${isProduction ? 'Postgres' : 'SQLite'})`);
+  } catch (err) {
+    console.error('Schema initialization error:', err);
   }
-  // Migration: Add email to alunos if missing
-  if (!columnExists('alunos', 'email')) {
-    try {
-      db.exec(`ALTER TABLE alunos ADD COLUMN email TEXT`);
-    } catch (e) { console.error('Migration Error (alunos.email):', e.message); }
-  }
-
-  // Migration: Add data column to aulas if missing
-  if (!columnExists('aulas', 'data')) {
-    try {
-      db.exec(`ALTER TABLE aulas ADD COLUMN data TEXT`);
-    } catch (e) { console.error('Migration Error (aulas.data):', e.message); }
-  }
-
-  // Migration: Add mensagem_cobranca to alunos if missing
-  if (!columnExists('alunos', 'mensagem_cobranca')) {
-    try {
-      db.exec(`ALTER TABLE alunos ADD COLUMN mensagem_cobranca TEXT`);
-    } catch (e) { console.error('Migration Error (alunos.mensagem_cobranca):', e.message); }
-  }
-
-   // Migration: Change vencimento to INTEGER if it was TEXT (Hard to migrate type in SQLite without recreate, let's just ensure new col or use logic)
-   // We will assume 'vencimento' exists. If it was text date, we might need logic change.
-   // For now, let's keep it flexible.
-
-  // 3. Aulas (Classes)
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS aulas (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      aluno_id INTEGER NOT NULL REFERENCES alunos(id) ON DELETE CASCADE,
-      data TEXT, -- YYYY-MM-DD for specific date
-      dia_semana TEXT, -- 'seg', 'ter', etc for recurring
-      hora_inicio TEXT NOT NULL,
-      hora_fim TEXT NOT NULL,
-      horas REAL,
-      tipo_treino TEXT DEFAULT NULL,
-      observacoes TEXT DEFAULT NULL,
-      created_at TEXT DEFAULT (datetime('now'))
-    );
-  `);
-
-  // 4. Pagamentos / Cobrancas
-  // Re-aligning with "Pagamentos" requirement: aluno_id, valor, data_vencimento, status, mes, ano
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS pagamentos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      aluno_id INTEGER NOT NULL REFERENCES alunos(id) ON DELETE CASCADE,
-      valor REAL NOT NULL,
-      data_vencimento TEXT NOT NULL, -- YYYY-MM-DD
-      data_pagamento TEXT, -- YYYY-MM-DD (NULL if pending)
-      status TEXT NOT NULL DEFAULT 'pendente', -- pendente, pago, atrasado
-      mes INTEGER NOT NULL,
-      ano INTEGER NOT NULL,
-      metodo TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
-    );
-  `);
-  
-  // Note: We are leaving 'cobrancas' table from V2 for now to avoid data loss, but V3 should prefer 'pagamentos'.
-  // We can eventually migrate.
-
-  console.log('✅ Schema initialized (V3 Multi-tenant)');
 };

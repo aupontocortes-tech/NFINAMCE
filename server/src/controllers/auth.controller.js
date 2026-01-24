@@ -12,18 +12,26 @@ export const register = async (req, res) => {
   }
 
   try {
-    const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    const existingUser = await db('users').where({ email }).first();
     if (existingUser) {
       return res.status(400).json({ error: 'E-mail já cadastrado.' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const info = db.prepare('INSERT INTO users (name, email, password) VALUES (?, ?, ?)').run(name, email, hashedPassword);
     
-    const user = { id: info.lastInsertRowid, name, email };
+    // Insert and get ID (Compatible with PG and SQLite if using recent Knex/better-sqlite3)
+    const [inserted] = await db('users').insert({ name, email, password: hashedPassword }).returning(['id', 'name', 'email']);
+    
+    // Fallback if returning not supported or behaves differently
+    let user = inserted;
+    if (!user || !user.id) {
+        // Fetch by email if insert didn't return full object
+         user = await db('users').where({ email }).first();
+    }
+
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
 
-    res.status(201).json({ user, token });
+    res.status(201).json({ user: { id: user.id, name: user.name, email: user.email }, token });
   } catch (error) {
     console.error('Register error:', error);
     res.status(500).json({ error: 'Erro ao registrar usuário.' });
@@ -38,7 +46,7 @@ export const login = async (req, res) => {
   }
 
   try {
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    const user = await db('users').where({ email }).first();
     if (!user) {
       return res.status(401).json({ error: 'Credenciais inválidas.' });
     }
@@ -59,9 +67,9 @@ export const login = async (req, res) => {
   }
 };
 
-export const me = (req, res) => {
+export const me = async (req, res) => {
   try {
-    const user = db.prepare('SELECT id, name, email, created_at FROM users WHERE id = ?').get(req.user.id);
+    const user = await db('users').select('id', 'name', 'email', 'created_at').where({ id: req.user.id }).first();
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
     res.json(user);
   } catch (error) {
