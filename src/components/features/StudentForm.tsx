@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+  email: z.string().email('E-mail inválido'),
   phone: z.string().min(10, 'Telefone inválido (inclua DDD)'),
   value: z.coerce.number().min(1, 'Valor deve ser maior que 0'),
   dueDate: z.coerce.number().min(1).max(31, 'Dia deve ser entre 1 e 31'),
@@ -31,6 +32,7 @@ export function StudentForm({ initialData, onSubmit, isEditing = false }: Studen
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: initialData?.name || '',
+      email: initialData?.email || '',
       phone: initialData?.phone || '',
       value: initialData?.value || 0,
       dueDate: initialData?.dueDate || 10,
@@ -57,10 +59,24 @@ export function StudentForm({ initialData, onSubmit, isEditing = false }: Studen
 
         <FormField
           control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>E-mail</FormLabel>
+              <FormControl>
+                <Input placeholder="aluno@email.com" {...field} className="h-12" type="email" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="phone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Telefone (WhatsApp)</FormLabel>
+              <FormLabel>Telefone</FormLabel>
               <FormControl>
                 <Input placeholder="11999999999" {...field} className="h-12" type="tel" />
               </FormControl>
@@ -118,11 +134,17 @@ export function StudentForm({ initialData, onSubmit, isEditing = false }: Studen
           name="customMessage"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Mensagem Personalizada (Opcional)</FormLabel>
+              <FormLabel>Mensagem de Cobrança Personalizada (Opcional)</FormLabel>
               <FormControl>
-                <Input placeholder="Olá {nome}, sua fatura venceu..." {...field} className="h-12" />
+                <Textarea 
+                  placeholder="Olá {nome}, sua mensalidade vence em breve..." 
+                  {...field} 
+                  className="min-h-[100px]" 
+                />
               </FormControl>
-              <FormDescription>Se vazio, usará a mensagem padrão.</FormDescription>
+              <FormDescription>
+                Esta mensagem será enviada por e-mail para o aluno.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

@@ -1,143 +1,193 @@
-"use client";
-import React, { useEffect, useMemo, useState } from "react";
+'use client';
 
-type ChargeRow = {
-  cobranca_id: number;
-  aluno_id: number;
-  nome: string;
-  telefone?: string;
-  mes: string;
-  valor_total: number;
-  vencimento: string;
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Check, DollarSign, Loader2, Calendar, AlertCircle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { getApiUrl } from '@/lib/utils';
+import { toast } from 'sonner';
+
+type Payment = {
+  id: number;
+  valor: number;
+  data_vencimento: string;
   status: string;
-  valor_pago: number;
-  ultima_data?: string;
-  ultimo_metodo?: string;
+  mes: number;
+  ano: number;
+  data_pagamento: string | null;
+  metodo_pagamento: string | null;
+  aluno_nome: string;
+  aluno_email: string | null;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3001";
-
 export default function PaymentsPage() {
+  const { token } = useAuth();
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
-  const [rows, setRows] = useState<ChargeRow[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [processingId, setProcessingId] = useState<number | null>(null);
 
-  const totalAReceber = useMemo(() => rows.reduce((acc, r) => acc + (Number(r.valor_total) || 0), 0), [rows]);
-  const totalPago = useMemo(() => rows.reduce((acc, r) => acc + (Number(r.valor_pago) || 0), 0), [rows]);
-
-  const load = async () => {
+  const loadPayments = async () => {
+    if (!token) return;
     setLoading(true);
-    setError(null);
     try {
-      const res = await fetch(`${API_BASE}/pagamentos?mes=${month}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const res = await fetch(`${getApiUrl()}/pagamentos?month=${month}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!res.ok) throw new Error('Falha ao carregar pagamentos');
+      
       const data = await res.json();
-      setRows(data);
-    } catch (e: any) {
-      setError(e.message || "Falha ao carregar");
+      setPayments(data);
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao carregar pagamentos');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    load();
+    loadPayments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [month]);
+  }, [token, month]);
 
-  const pay = async (cobrancaId: number, valor: number) => {
+  const stats = useMemo(() => {
+    const totalExpected = payments.reduce((acc, p) => acc + (p.valor || 0), 0);
+    const totalReceived = payments
+      .filter(p => p.status === 'pago')
+      .reduce((acc, p) => acc + (p.valor || 0), 0);
+    const totalPending = totalExpected - totalReceived;
+
+    return { totalExpected, totalReceived, totalPending };
+  }, [payments]);
+
+  const handleMarkAsPaid = async (id: number) => {
+    if (!token) return;
+    setProcessingId(id);
     try {
-      const res = await fetch(`${API_BASE}/pagamentos`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cobranca_id: cobrancaId, valor }),
+      const res = await fetch(`${getApiUrl()}/pagamentos/${id}/pago`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ metodo: 'manual' })
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      await load();
-    } catch (e: any) {
-      alert(e.message || "Erro ao registrar pagamento");
+
+      if (!res.ok) throw new Error('Falha ao atualizar pagamento');
+
+      toast.success('Pagamento marcado como pago!');
+      await loadPayments();
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao marcar como pago');
+    } finally {
+      setProcessingId(null);
     }
   };
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Pagamentos</h1>
+        <h1 className="text-2xl font-bold text-zinc-900">Financeiro</h1>
         <div className="flex items-center gap-2">
-          <label className="text-sm">Mês</label>
-          <input
+          <Calendar className="w-4 h-4 text-zinc-500" />
+          <Input
             type="month"
             value={month}
             onChange={(e) => setMonth(e.target.value)}
-            className="border rounded px-2 py-1"
+            className="w-40"
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white border rounded p-3">
-          <div className="text-sm text-gray-600">Total a receber</div>
-          <div className="text-2xl font-bold">R$ {totalAReceber.toFixed(2)}</div>
-        </div>
-        <div className="bg-white border rounded p-3">
-          <div className="text-sm text-gray-600">Total pago</div>
-          <div className="text-2xl font-bold">R$ {totalPago.toFixed(2)}</div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-zinc-500">Total Previsto</CardTitle>
+            <DollarSign className="w-4 h-4 text-zinc-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">R$ {stats.totalExpected.toFixed(2)}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-zinc-500">Total Recebido</CardTitle>
+            <Check className="w-4 h-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">R$ {stats.totalReceived.toFixed(2)}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-zinc-500">Pendente</CardTitle>
+            <AlertCircle className="w-4 h-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">R$ {stats.totalPending.toFixed(2)}</div>
+          </CardContent>
+        </Card>
       </div>
 
-      {error && <div className="text-red-600">{error}</div>}
-      {loading && <div>Carregando...</div>}
-
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr className="text-left border-b">
-              <th className="p-2">Aluno</th>
-              <th className="p-2">Vencimento</th>
-              <th className="p-2">Valor</th>
-              <th className="p-2">Pago</th>
-              <th className="p-2">Status</th>
-              <th className="p-2">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => {
-              const aberto = r.status !== "pago";
-              return (
-                <tr key={r.cobranca_id} className="border-b">
-                  <td className="p-2">
-                    <div className="font-medium">{r.nome}</div>
-                    {r.telefone && <div className="text-gray-500">{r.telefone}</div>}
-                  </td>
-                  <td className="p-2">{new Date(r.vencimento).toLocaleDateString()}</td>
-                  <td className="p-2">R$ {Number(r.valor_total).toFixed(2)}</td>
-                  <td className="p-2">R$ {Number(r.valor_pago).toFixed(2)}</td>
-                  <td className="p-2">
-                    <span className={
-                      `px-2 py-1 rounded text-xs ${aberto ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`
-                    }>
-                      {r.status}
-                    </span>
-                  </td>
-                  <td className="p-2">
-                    {aberto ? (
-                      <button
-                        onClick={() => pay(r.cobranca_id, r.valor_total)}
-                        className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+      <Card>
+        <CardHeader>
+          <CardTitle>Pagamentos de {new Date(month + '-01').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : payments.length === 0 ? (
+            <div className="text-center py-10 text-zinc-500">Nenhum pagamento encontrado para este mês.</div>
+          ) : (
+            <div className="space-y-4">
+              {payments.map((payment) => (
+                <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-zinc-50 transition-colors">
+                  <div>
+                    <p className="font-semibold">{payment.aluno_nome}</p>
+                    <p className="text-sm text-zinc-500">
+                      Vencimento: {new Date(payment.data_vencimento).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <p className="font-semibold">R$ {payment.valor.toFixed(2)}</p>
+                      <Badge variant={payment.status === 'pago' ? 'default' : 'secondary'} className={payment.status === 'pago' ? 'bg-green-600 hover:bg-green-700' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'}>
+                        {payment.status === 'pago' ? 'Pago' : 'Pendente'}
+                      </Badge>
+                    </div>
+                    {payment.status !== 'pago' && (
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="text-green-600 border-green-200 hover:bg-green-50"
+                        onClick={() => handleMarkAsPaid(payment.id)}
+                        disabled={processingId === payment.id}
                       >
-                        Marcar pago
-                      </button>
-                    ) : (
-                      <span className="text-gray-500">Pago</span>
+                        {processingId === payment.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Check className="w-4 h-4 mr-2" />
+                        )}
+                        Marcar Pago
+                      </Button>
                     )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

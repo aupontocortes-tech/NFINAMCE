@@ -1,13 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import { config } from './config/env.js';
-import whatsappRoutes from './routes/whatsapp.routes.js';
+import authRoutes from './routes/auth.routes.js';
 import studentsRoutes from './routes/students.routes.js';
 import aulasRoutes from './routes/aulas.routes.js';
 import chargesRoutes from './routes/charges.routes.js';
 import paymentsRoutes from './routes/payments.routes.js';
+import dashboardRoutes from './routes/dashboard.routes.js';
 import { iniciarCron } from './services/cron.service.js';
-import { sessionService } from './whatsapp/session.service.js';
 import { initSchema } from './data/db.js';
 import { importInitialSpreadsheetIfNeeded } from './services/import.service.js';
 import { runInitialSeed2026 } from './services/seed2026.service.js';
@@ -20,15 +20,16 @@ app.use(express.json());
 
 // Inicializa DB e importação inicial
 initSchema();
-importInitialSpreadsheetIfNeeded();
-runInitialSeed2026();
+// importInitialSpreadsheetIfNeeded(); // Desativado temporariamente na V3
+// runInitialSeed2026(); // Desativado temporariamente na V3
 
 // Rotas
-app.use('/whatsapp', whatsappRoutes);
+app.use('/auth', authRoutes);
 app.use('/', studentsRoutes);
 app.use('/', aulasRoutes);
 app.use('/', chargesRoutes);
 app.use('/', paymentsRoutes);
+app.use('/', dashboardRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {
@@ -37,7 +38,7 @@ app.get('/health', (req, res) => {
 
 // Root
 app.get('/', (req, res) => {
-  res.send('NFinance Backend V2 (Layered Architecture) is running! 🚀');
+  res.send('NFinance Backend V3 (Multi-tenant) is running! 🚀');
 });
 
 // Tratamento global de erros
@@ -48,18 +49,11 @@ app.use((err, req, res, next) => {
 
 // Inicialização
 app.listen(config.port, () => {
-  console.log(`\n🚀 Servidor V2 rodando em http://localhost:${config.port}`);
-  console.log(`📱 API WhatsApp: http://localhost:${config.port}/whatsapp`);
+  console.log(`\n🚀 Servidor V3 rodando em http://localhost:${config.port}`);
   console.log(`📝 API Alunos: http://localhost:${config.port}/alunos`);
 
   // Inicia o agendamento de tarefas
   iniciarCron();
-
-  // Inicia sessão padrão automaticamente com delay para não sobrecarregar boot
-  console.log('⏳ Aguardando 5s para iniciar WhatsApp Service...');
-  setTimeout(() => {
-    sessionService.startSession('default').catch(e => console.error('Erro ao iniciar sessão default:', e));
-  }, 5000);
 });
 
 // Tratamento de Processos

@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash2, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, Dumbbell } from "lucide-react";
@@ -68,11 +69,13 @@ const getCardColor = (alunoId: number) => {
 };
 
 export default function ClassesPage() {
+  const { token } = useAuth();
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [aulas, setAulas] = useState<Aula[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isNewAulaOpen, setIsNewAulaOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Começa na segunda-feira
 
@@ -80,18 +83,44 @@ export default function ClassesPage() {
   const prevWeek = () => setCurrentDate(subWeeks(currentDate, 1));
   const resetWeek = () => setCurrentDate(new Date());
   
-  const [form, setForm] = useState({
+  const initialFormState = {
     aluno_id: "",
     data: "",
     dia_semana: "",
     hora_inicio: "",
     hora_fim: "",
     tipo_treino: "",
-  });
+  };
+
+  const [form, setForm] = useState(initialFormState);
+
+  const openEdit = (aula: Aula) => {
+    setEditingId(aula.id);
+    setForm({
+      aluno_id: aula.aluno_id.toString(),
+      data: aula.data || "",
+      dia_semana: aula.dia_semana || "",
+      hora_inicio: aula.hora_inicio,
+      hora_fim: aula.hora_fim,
+      tipo_treino: aula.tipo_treino || "",
+    });
+    setIsNewAulaOpen(true);
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    setIsNewAulaOpen(open);
+    if (!open) {
+      setEditingId(null);
+      setForm(initialFormState);
+    }
+  };
 
   const fetchAlunos = async () => {
+    if (!token) return;
     try {
-      const res = await fetch(`${API}/alunos`);
+      const res = await fetch(`${API}/alunos`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (!res.ok) throw new Error("Falha ao buscar alunos");
       const data = await res.json();
       setAlunos(Array.isArray(data) ? data : []);
@@ -102,8 +131,11 @@ export default function ClassesPage() {
   };
 
   const fetchAulas = async () => {
+    if (!token) return;
     try {
-      const res = await fetch(`${API}/aulas`);
+      const res = await fetch(`${API}/aulas`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (!res.ok) throw new Error("Falha ao buscar aulas");
       const data = await res.json();
       setAulas(Array.isArray(data) ? data : []);
@@ -114,9 +146,17 @@ export default function ClassesPage() {
   };
 
   useEffect(() => {
-    fetchAlunos();
-    fetchAulas();
-  }, []);
+    if (token) {
+        fetchAlunos();
+        fetchAulas();
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (isNewAulaOpen) {
+      fetchAlunos();
+    }
+  }, [isNewAulaOpen]);
 
   const submit = async () => {
     // Validações com feedback visual
@@ -139,9 +179,15 @@ export default function ClassesPage() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API}/aulas`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const url = editingId ? `${API}/aulas/${editingId}` : `${API}/aulas`;
+      const method = editingId ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
         body: JSON.stringify({
           aluno_id: Number(form.aluno_id),
           data: form.data || null,
@@ -152,8 +198,7 @@ export default function ClassesPage() {
         }),
       });
       if (res.ok) {
-        setForm({ aluno_id: "", data: "", dia_semana: "", hora_inicio: "", hora_fim: "", tipo_treino: "" });
-        setIsNewAulaOpen(false);
+        handleOpenChange(false);
         fetchAulas();
       } else {
         const err = await res.json();
@@ -170,7 +215,10 @@ export default function ClassesPage() {
     if (!confirm("Remover aula?")) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API}/aulas/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API}/aulas/${id}`, { 
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (res.status === 204) fetchAulas();
     } finally {
       setLoading(false);
@@ -221,7 +269,7 @@ export default function ClassesPage() {
                 </Button>
             </div>
 
-            <Dialog open={isNewAulaOpen} onOpenChange={setIsNewAulaOpen}>
+            <Dialog open={isNewAulaOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button className="gap-2 shadow-sm">
                 <Plus className="w-4 h-4" />
@@ -230,7 +278,7 @@ export default function ClassesPage() {
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                <DialogTitle>Agendar Nova Aula</DialogTitle>
+                <DialogTitle>{editingId ? "Editar Aula" : "Agendar Nova Aula"}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                 <div className="space-y-2">
@@ -277,20 +325,20 @@ export default function ClassesPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                    <label className="text-sm font-medium">Início</label>
-                    <Input 
-                        type="time" 
-                        value={form.hora_inicio} 
-                        onChange={(e) => setForm((f) => ({ ...f, hora_inicio: e.target.value }))} 
-                    />
+                        <label className="text-sm font-medium">Início</label>
+                        <Input 
+                            type="time" 
+                            value={form.hora_inicio} 
+                            onChange={(e) => setForm((f) => ({ ...f, hora_inicio: e.target.value }))} 
+                        />
                     </div>
                     <div className="space-y-2">
-                    <label className="text-sm font-medium">Fim</label>
-                    <Input 
-                        type="time" 
-                        value={form.hora_fim} 
-                        onChange={(e) => setForm((f) => ({ ...f, hora_fim: e.target.value }))} 
-                    />
+                        <label className="text-sm font-medium">Fim</label>
+                        <Input 
+                            type="time" 
+                            value={form.hora_fim} 
+                            onChange={(e) => setForm((f) => ({ ...f, hora_fim: e.target.value }))} 
+                        />
                     </div>
                 </div>
 
@@ -358,7 +406,8 @@ export default function ClassesPage() {
                         return (
                           <div 
                             key={aula.id} 
-                            className={`rounded-md p-2 border shadow-sm text-left relative group/card transition-all hover:shadow-md ${getCardColor(aula.aluno_id)}`}
+                            className={`rounded-md p-2 border shadow-sm text-left relative group/card transition-all hover:shadow-md cursor-pointer ${getCardColor(aula.aluno_id)}`}
+                            onClick={() => openEdit(aula)}
                           >
                             <button 
                                 onClick={(e) => { e.stopPropagation(); remove(aula.id); }}

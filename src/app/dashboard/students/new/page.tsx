@@ -5,12 +5,19 @@ import { useAppStore } from '@/lib/store';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { getApiUrl } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function NewStudentPage() {
   const { addStudent } = useAppStore();
+  const { token } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (data: any) => {
+    if (!token) {
+      toast.error('Você precisa estar logado para adicionar alunos.');
+      return;
+    }
+
     const newStudent = {
       id: crypto.randomUUID(),
       ...data,
@@ -24,14 +31,19 @@ export default function NewStudentPage() {
     try {
       const res = await fetch(`${getApiUrl()}/alunos`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           nome: data.name,
+          email: data.email, // Ensure email is passed too
           telefone: data.phone,
           valor: data.value,
           plano: 'mensal',
           status: 'ativo',
           vencimento: String(data.dueDate), // dia do mês
+          customMessage: data.customMessage,
         }),
       });
       const resp = await res.json().catch(() => ({}));

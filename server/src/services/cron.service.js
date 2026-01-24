@@ -1,91 +1,102 @@
 import cron from 'node-cron';
-import { alunos } from '../data/alunos.js';
-import { sessionService } from '../whatsapp/session.service.js';
-import { gerarMensagem } from '../utils/gerarMensagem.js';
-
-const DEFAULT_SESSION_ID = 'default';
+import { db } from '../data/db.js';
+import { sendEmail } from './email.service.js';
+import { addDays, format } from 'date-fns';
 
 export const verificarCobrancas = async () => {
-  console.log('--- 🔄 Iniciando verificação de cobranças (Cron) ---');
-
-  const { status } = sessionService.getStatus(DEFAULT_SESSION_ID);
+  console.log('--- 🔄 Iniciando verificação de cobranças (Cron Email) ---');
   
-  if (status !== 'READY') {
-    console.error(`⚠️ ABORTANDO COBRANÇA: Sessão '${DEFAULT_SESSION_ID}' não está PRONTA (Status: ${status}).`);
-    return;
-  }
+  const today = new Date();
+  const targetDate = addDays(today, 3);
+  const targetDateStr = format(targetDate, 'yyyy-MM-dd'); // Check payments due in 3 days
 
-  const hoje = new Date();
-  const diaAtual = hoje.getDate();
-  const mesAtual = hoje.getMonth();
-  const anoAtual = hoje.getFullYear();
+  // 1. Find payments due in 3 days
+  const pagamentos = db.prepare(`
+    SELECT p.*, a.nome as aluno_nome, a.email as aluno_email, a.mensagem_cobranca, u.email as professor_email, u.name as professor_nome
+    FROM pagamentos p
+    JOIN alunos a ON p.aluno_id = a.id
+    JOIN users u ON a.user_id = u.id
+    WHERE p.data_vencimento = ? AND p.status = 'pendente'
+  `).all(targetDateStr);
 
-  let enviadas = 0;
+  console.log(`🔎 Encontrados ${pagamentos.length} pagamentos vencendo em ${targetDateStr}`);
 
-  for (const aluno of alunos) {
-    // Regra 1: Dia Vencimento == Dia Atual
-    if (aluno.diaVencimento !== diaAtual) continue;
-    
-    // Regra 2: Status Pendente
-    if (aluno.status !== 'PENDENTE') continue;
+  for (const pag of pagamentos) {
+    // Email para o Aluno
+    if (pag.aluno_email) {
+      const defaultMessage = `<p>Olá ${pag.aluno_nome},</p>
+         <p>Sua mensalidade no valor de <strong>R$ ${pag.valor}</strong> vence em 3 dias (${format(targetDate, 'dd/MM/yyyy')}).</p>
+         <p>Por favor, regularize seu pagamento.</p>`;
 
-    // Regra 3: Não enviou neste mês
-    let jaEnviou = false;
-    if (aluno.ultimaCobranca) {
-      const dataUltima = new Date(aluno.ultimaCobranca);
-      if (dataUltima.getMonth() === mesAtual && dataUltima.getFullYear() === anoAtual) {
-        jaEnviou = true;
-      }
+      const messageBody = pag.mensagem_cobranca 
+        ? `<p>${pag.mensagem_cobranca.replace(/\n/g, '<br>')}</p>
+           <hr>
+           <p><small>Detalhes da Cobrança:<br>Valor: R$ ${pag.valor}<br>Vencimento: ${format(targetDate, 'dd/MM/yyyy')}</small></p>`
+        : defaultMessage;
+
+      await sendEmail(
+        pag.aluno_email,
+        'Lembrete de Pagamento - NFinance',
+        messageBody
+      );
     }
 
-    if (!jaEnviou) {
-      const msg = gerarMensagem(aluno);
-      try {
-        await sessionService.sendMessage(DEFAULT_SESSION_ID, aluno.telefone, msg);
-        aluno.ultimaCobranca = new Date().toISOString();
-        enviadas++;
-      } catch (error) {
-        console.error(`Erro ao enviar cobrança para ${aluno.nome}:`, error.message);
-      }
+    // Email para o Professor
+    if (pag.professor_email) {
+      await sendEmail(
+        pag.professor_email,
+        'Aviso de Vencimento Próximo',
+        `<p>Olá ${pag.professor_nome},</p>
+         <p>A mensalidade do aluno <strong>${pag.aluno_nome}</strong> vence em 3 dias.</p>`
+      );
     }
   }
-  console.log(`--- ✅ Fim da verificação. ${enviadas} mensagens enviadas. ---`);
+
+  console.log('--- ✅ Fim da verificação de e-mails. ---');
 };
 
-export const cobrarPendentesAtrasados = async () => {
-  console.log('--- 🔄 Iniciando cobrança manual de atrasados ---');
+export const gerarMensalidadesAutomaticas = async () => {
+  console.log('--- 🔄 Gerando mensalidades automáticas... ---');
+  const today = new Date();
+  const currentMonth = today.getMonth() + 1; // 1-12
+  const currentYear = today.getFullYear();
+  const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
+  const nextMonthYear = currentMonth === 12 ? currentYear + 1 : currentYear;
 
-  const { status } = sessionService.getStatus(DEFAULT_SESSION_ID);
-  
-  if (status !== 'READY') {
-    return { success: false, message: `Sessão WhatsApp '${DEFAULT_SESSION_ID}' não está conectada` };
-  }
-
-  const hoje = new Date();
-  const diaAtual = hoje.getDate();
-  let enviadas = 0;
+  // Select active students
+  const alunos = db.prepare("SELECT * FROM alunos WHERE status = 'ativo'").all();
 
   for (const aluno of alunos) {
-    // Regra: Pendente e Dia Atual >= Dia Vencimento (já venceu ou vence hoje)
-    if (aluno.status === 'PENDENTE' && diaAtual >= aluno.diaVencimento) {
-      const msg = gerarMensagem(aluno);
-      try {
-        await sessionService.sendMessage(DEFAULT_SESSION_ID, aluno.telefone, msg);
-        aluno.ultimaCobranca = new Date().toISOString();
-        enviadas++;
-      } catch (error) {
-        console.error(`Erro ao enviar cobrança atrasada para ${aluno.nome}:`, error.message);
-      }
+    // Check if payment exists for this month
+    const exists = db.prepare("SELECT id FROM pagamentos WHERE aluno_id = ? AND mes = ? AND ano = ?")
+      .get(aluno.id, currentMonth, currentYear);
+
+    if (!exists) {
+        // Calculate due date based on 'vencimento' (day)
+        let dueDay = aluno.vencimento || 5; // Default to day 5 if null
+        // Simple logic: if today is past due day, maybe generate for next month? 
+        // For now, let's just generate for current month if missing.
+        const dueDate = new Date(currentYear, currentMonth - 1, dueDay);
+        const dueDateStr = format(dueDate, 'yyyy-MM-dd');
+
+        db.prepare(`
+            INSERT INTO pagamentos (aluno_id, valor, data_vencimento, status, mes, ano)
+            VALUES (?, ?, ?, 'pendente', ?, ?)
+        `).run(aluno.id, aluno.valor, dueDateStr, currentMonth, currentYear);
+        console.log(`➕ Mensalidade gerada para ${aluno.nome} (${currentMonth}/${currentYear})`);
     }
   }
-  return { success: true, enviadas };
+  console.log('--- ✅ Fim da geração de mensalidades. ---');
 };
 
 // Agendar para 09:00 todo dia
 export const iniciarCron = () => {
-  cron.schedule('0 9 * * *', verificarCobrancas, {
+  cron.schedule('0 9 * * *', async () => {
+    await gerarMensalidadesAutomaticas();
+    await verificarCobrancas();
+  }, {
     scheduled: true,
     timezone: "America/Sao_Paulo"
   });
-  console.log('⏰ Cron job de cobrança configurado (09:00 diariamente).');
+  console.log('⏰ Cron job de e-mail configurado (09:00 diariamente).');
 };

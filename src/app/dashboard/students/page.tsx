@@ -7,16 +7,42 @@ import { Badge } from '@/components/ui/badge';
 import { Check, Edit, Trash2, Phone, Search, Send } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { getApiUrl } from '@/lib/utils';
-import { sendWhatsAppMessage } from '@/lib/whatsapp';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function StudentsPage() {
-  const { students, markAsPaid, deleteStudent } = useAppStore();
+  const { students, setStudents, updateStudent, deleteStudent } = useAppStore();
+  const { token } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'pending' | 'paid'>('all');
   const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    if (token) {
+      fetch(`${getApiUrl()}/alunos`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const mappedStudents = data.map((s: any) => ({
+            id: s.id.toString(),
+            name: s.nome,
+            email: s.email || '',
+            phone: s.telefone || '',
+            value: Number(s.valor),
+            dueDate: s.vencimento,
+            status: (s.status === 'ativo' ? 'pending' : (s.status === 'paid' ? 'paid' : 'pending')) as 'pending' | 'paid',
+            customMessage: s.mensagem_cobranca,
+          }));
+          setStudents(mappedStudents);
+        }
+      })
+      .catch(err => console.error('Erro ao buscar alunos:', err));
+    }
+  }, [token, setStudents]);
 
   const filteredStudents = students.filter(student => {
     const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -25,7 +51,7 @@ export default function StudentsPage() {
   });
 
   const handleMarkAsPaid = (id: string, name: string) => {
-    markAsPaid(id);
+    updateStudent(id, { status: 'paid' });
     toast.success(`${name} marcado como pago!`);
   };
 
@@ -152,14 +178,6 @@ export default function StudentsPage() {
                     <Check className="w-4 h-4 mr-1" /> Pago
                   </Button>
                 )}
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={() => sendWhatsAppMessage(student)}
-                >
-                  <Send className="w-4 h-4 mr-1" /> Enviar Mensagem
-                </Button>
                 <Button size="sm" variant="outline" asChild className="flex-1">
                   <Link href={`/dashboard/students/${student.id}`}>
                     <Edit className="w-4 h-4 mr-1" /> Editar
