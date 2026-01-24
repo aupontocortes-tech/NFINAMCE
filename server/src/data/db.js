@@ -112,6 +112,18 @@ export const initSchema = async () => {
         table.string('metodo');
         table.timestamp('created_at').defaultTo(db.fn.now());
       });
+    } else {
+      const hasDataVencimento = await db.schema.hasColumn('pagamentos', 'data_vencimento');
+      if (!hasDataVencimento) await db.schema.alterTable('pagamentos', t => t.string('data_vencimento'));
+
+      const hasMes = await db.schema.hasColumn('pagamentos', 'mes');
+      if (!hasMes) await db.schema.alterTable('pagamentos', t => t.integer('mes'));
+
+      const hasAno = await db.schema.hasColumn('pagamentos', 'ano');
+      if (!hasAno) await db.schema.alterTable('pagamentos', t => t.integer('ano'));
+
+      const hasMetodo = await db.schema.hasColumn('pagamentos', 'metodo');
+      if (!hasMetodo) await db.schema.alterTable('pagamentos', t => t.string('metodo'));
     }
 
     console.log(`✅ Schema initialized (${isProduction ? 'Postgres' : 'SQLite'})`);
