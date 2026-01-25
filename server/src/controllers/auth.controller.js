@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { db } from '../data/db.js';
+import { sendEmail } from '../services/email.service.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'nfinance-secret-key-change-me';
 
@@ -30,6 +31,22 @@ export const register = async (req, res) => {
     }
 
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+
+    // Enviar e-mail de boas-vindas
+    const emailSubject = 'Bem-vindo ao NFinance! 🚀';
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #18181b;">Bem-vindo(a), ${user.name}!</h1>
+        <p>Estamos muito felizes em ter você conosco.</p>
+        <p>O <strong>NFinance</strong> vai te ajudar a organizar suas aulas e pagamentos de forma simples.</p>
+        <hr style="border: 1px solid #e4e4e7; margin: 20px 0;">
+        <p>Se tiver dúvidas, responda a este e-mail.</p>
+        <p style="color: #71717a; font-size: 14px;">Equipe NFinance</p>
+      </div>
+    `;
+    
+    // Não usamos await aqui para não bloquear a resposta da API
+    sendEmail(user.email, emailSubject, emailHtml).catch(err => console.error('Erro ao enviar email de boas-vindas:', err));
 
     res.status(201).json({ user: { id: user.id, name: user.name, email: user.email }, token });
   } catch (error) {
