@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Users, LogOut, Dumbbell, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function DashboardLayout({
   children,
@@ -12,6 +13,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { logout } = useAuth();
 
   const isActive = (path: string) => pathname === path;
 
@@ -51,11 +53,9 @@ export default function DashboardLayout({
           </nav>
 
           <div className="p-4 border-t border-zinc-200 space-y-3 bg-zinc-50/50">
-            <Button variant="outline" className="w-full justify-start gap-3 text-zinc-600 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors" asChild>
-              <Link href="/" prefetch={false}>
-                <LogOut className="w-4 h-4" />
-                <span>Sair do Sistema</span>
-              </Link>
+            <Button variant="outline" className="w-full justify-start gap-3 text-zinc-600 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors" onClick={logout}>
+              <LogOut className="w-4 h-4" />
+              <span>Sair do Sistema</span>
             </Button>
           </div>
         </aside>
@@ -70,10 +70,8 @@ export default function DashboardLayout({
               <span className="font-bold text-lg">NFinance</span>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" asChild>
-                <Link href="/" prefetch={false}>
-                  <LogOut className="w-5 h-5 text-zinc-500" />
-                </Link>
+              <Button variant="ghost" size="icon" onClick={logout}>
+                <LogOut className="w-5 h-5 text-zinc-500" />
               </Button>
             </div>
           </header>
@@ -83,6 +81,10 @@ export default function DashboardLayout({
             <h2 className="font-semibold text-lg text-zinc-800">
                {pathname === '/dashboard' ? 'Visão Geral' : pathname === '/dashboard/students' ? 'Gerenciar Alunos' : pathname === '/dashboard/classes' ? 'Agenda de Aulas' : pathname === '/dashboard/payments' ? 'Pagamentos' : 'Dashboard'}
             </h2>
+            <Button variant="ghost" className="gap-2 text-zinc-600 hover:text-red-600 hover:bg-red-50" onClick={logout}>
+              <LogOut className="w-4 h-4" />
+              <span>Sair</span>
+            </Button>
           </header>
 
           {/* Conteúdo Principal */}
