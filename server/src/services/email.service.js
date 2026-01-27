@@ -14,6 +14,11 @@ const transporter = nodemailer.createTransport({
 
 // Configuração Resend (Prioritária)
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+if (resend) {
+  console.log('📧 Serviço de E-mail: Resend inicializado com sucesso.');
+} else {
+  console.log('⚠️ Serviço de E-mail: RESEND_API_KEY não encontrada. Usando fallback.');
+}
 
 export const sendEmail = async (to, subject, html) => {
   // 1. Tenta usar Resend se configurado

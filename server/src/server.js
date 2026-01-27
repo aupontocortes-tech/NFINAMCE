@@ -33,7 +33,7 @@ app.get('/health', (req, res) => {
 
 // Root
 app.get('/', (req, res) => {
-  res.send('NFinance Backend V3 (Multi-tenant) is running! 🚀');
+  res.send('NFinance Backend V2.1.0 (Render Check) is running! 🚀');
 });
 
 // Tratamento global de erros
@@ -53,7 +53,7 @@ initSchema().then(async () => {
 
   // Inicialização
   app.listen(config.port, () => {
-    console.log(`\n🚀 Servidor V3 rodando em http://localhost:${config.port}`);
+    console.log(`\n🚀 Servidor V2.1.0 (Render Check) rodando em http://localhost:${config.port}`);
     console.log(`📝 API Alunos: http://localhost:${config.port}/alunos`);
 
     // Inicia o agendamento de tarefas
