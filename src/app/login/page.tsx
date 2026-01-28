@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
+import { getApiUrl } from '@/lib/utils';
 
 const loginSchema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -30,17 +31,27 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginForm) => {
-    // Modo desenvolvimento: pula validação da API e entra direto
     setIsLoading(true);
     try {
-      const fakeUser = {
-        id: 1,
-        name: 'Professor Demo',
-        email: data.email,
-      };
+      const response = await fetch(`${getApiUrl()}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+        }),
+      });
 
-      login('dev-token', fakeUser);
-      toast.success('Login de desenvolvimento realizado!');
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao fazer login');
+      }
+
+      login(result.token, result.user);
+      toast.success('Login realizado com sucesso!');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro desconhecido');
     } finally {
       setIsLoading(false);
     }
