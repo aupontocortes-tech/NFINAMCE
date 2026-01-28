@@ -54,12 +54,15 @@ export default function DashboardPage() {
 
         // Mensagens mais amigáveis quando a API não responde
         if (error instanceof TypeError) {
+          const apiUrl = getApiUrl();
           const friendly =
-            'Não foi possível conectar com o servidor.\n\n' +
-            'Verifique se o backend está rodando em http://localhost:3001 (modo local)\n' +
-            'ou se a variável NEXT_PUBLIC_API_URL foi configurada na Vercel/Render.';
+            `Não foi possível conectar com o servidor.\n\n` +
+            `Tentando conectar em: ${apiUrl}\n\n` +
+            `Modo local: Verifique se o backend está rodando em http://localhost:3001\n` +
+            `Produção na Render: Confirme se o backend está online e se a variável NEXT_PUBLIC_API_URL está configurada no frontend.`;
           setErrorMessage(friendly);
           toast.error('Falha de conexão com a API. Veja as instruções na tela.');
+          console.error('URL da API tentada:', apiUrl);
         } else if (error instanceof Error) {
           setErrorMessage(error.message);
           toast.error(error.message);
@@ -119,7 +122,7 @@ export default function DashboardPage() {
                 <span className="font-semibold">Modo local:</span> abra um terminal, entre em <code>server</code> e rode <code>npm start</code>.
               </li>
               <li>
-                <span className="font-semibold">Produção:</span> confirme se o backend na Render está online e se a variável <code>NEXT_PUBLIC_API_URL</code> na Vercel aponta para essa URL.
+                <span className="font-semibold">Produção na Render:</span> confirme se o backend está online e se a variável <code>NEXT_PUBLIC_API_URL</code> está configurada no serviço do frontend apontando para a URL do backend (ex: <code>https://nfinamce.onrender.com</code>).
               </li>
             </ul>
           </CardContent>

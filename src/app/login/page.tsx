@@ -35,6 +35,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const apiUrl = getApiUrl();
+      console.log('🔗 Tentando conectar em:', apiUrl);
       const response = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -59,8 +60,10 @@ export default function LoginPage() {
       toast.success('Login realizado com sucesso!');
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        toast.error('Não foi possível conectar ao servidor. Verifique se o backend está online.');
-        console.error('Erro de conexão:', error);
+        const apiUrl = getApiUrl();
+        toast.error(`Não foi possível conectar ao servidor em ${apiUrl}. Verifique se o backend está online.`);
+        console.error('❌ Erro de conexão:', error);
+        console.error('📍 URL tentada:', apiUrl);
       } else {
         toast.error(error instanceof Error ? error.message : 'Erro desconhecido ao fazer login');
         console.error('Erro no login:', error);
