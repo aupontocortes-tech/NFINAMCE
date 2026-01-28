@@ -1,36 +1,141 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 💪 NFinance - Sistema de Gestão para Personal Trainers
 
-## Getting Started
+Sistema completo para gerenciar alunos, aulas, pagamentos e cobranças automatizadas.
 
-First, run the development server:
+## 🚀 Início Rápido
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### Windows (PowerShell):
+```powershell
+.\INICIAR-AGORA.ps1
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Ou manualmente:
+```bash
+# Terminal 1 - Backend
+cd server
+npm start
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# Terminal 2 - Frontend  
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Acesse:** http://localhost:3000
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 📋 Pré-requisitos
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Node.js 18+ instalado
+- npm ou yarn
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## ⚙️ Configuração
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 1. Variáveis de Ambiente
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+O arquivo `server/.env` já está criado com valores padrão.
+
+**Para usar emails (Resend):**
+1. Obtenha sua chave em: https://resend.com/api-keys
+2. Edite `server/.env`:
+   ```
+   RESEND_API_KEY=re_sua_chave_aqui
+   ```
+
+**Guia completo:** Veja `CONFIGURAR_RESEND.md`
+
+### 2. Banco de Dados
+
+- **Localhost:** SQLite automático (não precisa configurar)
+- **Render:** Configure `DATABASE_URL` com PostgreSQL
+
+---
+
+## 🌐 Deploy na Render
+
+### Backend:
+- Root Directory: `server`
+- Build Command: `npm install`
+- Start Command: `npm start`
+
+### Frontend:
+- Root Directory: `.`
+- Build Command: `npm install && npm run build`
+- Start Command: `npm start`
+- Variável: `NEXT_PUBLIC_API_URL` = URL do backend
+
+**Guia completo:** Veja `GUIA_RENDER_COMPLETO.md`
+
+---
+
+## 📚 Documentação
+
+- `SETUP_COMPLETO.md` - Guia completo de setup
+- `CONFIGURAR_RESEND.md` - Como configurar emails
+- `GUIA_RENDER_COMPLETO.md` - Deploy na Render
+- `COMO_FAZER_LOGIN.md` - Guia de autenticação
+- `COMO_INICIAR.md` - Como iniciar localmente
+
+---
+
+## 🎯 Funcionalidades
+
+- ✅ Autenticação (Login/Registro)
+- ✅ Gestão de Alunos
+- ✅ Gestão de Aulas
+- ✅ Controle de Pagamentos
+- ✅ Dashboard Financeiro
+- ✅ Envio de Emails (Resend)
+- ✅ Cobranças Automatizadas
+
+---
+
+## 🛠️ Tecnologias
+
+- **Frontend:** Next.js 16, React 19, TypeScript, Tailwind CSS
+- **Backend:** Node.js, Express, Knex.js
+- **Banco:** SQLite (dev) / PostgreSQL (prod)
+- **Email:** Resend API
+- **Autenticação:** JWT
+
+---
+
+## 📝 Estrutura do Projeto
+
+```
+NFINAMCE/
+├── server/          # Backend (Express)
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   └── data/
+│   └── .env         # Variáveis de ambiente
+├── src/             # Frontend (Next.js)
+│   ├── app/
+│   ├── components/
+│   └── lib/
+└── package.json     # Frontend dependencies
+```
+
+---
+
+## ✅ Status
+
+- ✅ Backend funcionando
+- ✅ Frontend funcionando
+- ✅ Banco de dados configurado
+- ✅ Resend configurado (precisa adicionar API Key)
+- ✅ Código no GitHub
+- ✅ Pronto para deploy na Render
+
+---
+
+## 🐛 Problemas?
+
+Veja `SETUP_COMPLETO.md` para troubleshooting completo.
+
+---
+
+**Desenvolvido com 💪 para Personal Trainers**
