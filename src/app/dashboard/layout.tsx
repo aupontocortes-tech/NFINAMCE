@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, LogOut, Dumbbell, Clock } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, Dumbbell, Clock, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,7 +13,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   const isActive = (path: string) => pathname === path;
 
@@ -37,19 +37,32 @@ export default function DashboardLayout({
       <div className="min-h-screen bg-zinc-50 flex">
         {/* Sidebar Desktop (Lado Esquerdo) */}
         <aside className="hidden md:flex flex-col w-64 bg-white border-r border-zinc-200 fixed inset-y-0 z-30">
-          <div className="p-6 border-b border-zinc-200 flex items-center gap-2">
-            <div className="bg-primary/10 p-2 rounded-lg">
-              <Dumbbell className="text-primary w-6 h-6" />
+          <div className="p-6 border-b border-zinc-200 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="bg-primary/10 p-2 rounded-lg">
+                <Dumbbell className="text-primary w-6 h-6" />
+              </div>
+              <span className="font-bold text-xl text-zinc-900 tracking-tight">NFinance</span>
             </div>
-            <span className="font-bold text-xl text-zinc-900 tracking-tight">NFinance</span>
+            {user && (
+              <Link href="/dashboard/profile" prefetch={false} className="flex items-center gap-2 text-sm text-zinc-600 hover:text-zinc-900">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold">
+                  {user.name?.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex flex-col leading-tight">
+                  <span className="font-medium truncate max-w-[120px]">{user.name}</span>
+                  <span className="text-[10px] text-zinc-400 uppercase tracking-wide">Perfil</span>
+                </div>
+              </Link>
+            )}
           </div>
 
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             <SidebarLink href="/dashboard" icon={LayoutDashboard} label="Visão Geral" />
             <SidebarLink href="/dashboard/students" icon={Users} label="Meus Alunos" />
-            {/* Novo item abaixo de Meus Alunos */}
             <SidebarLink href="/dashboard/classes" icon={Clock} label="Agenda de Aulas" />
             <SidebarLink href="/dashboard/payments" icon={LayoutDashboard} label="Pagamentos" />
+            <SidebarLink href="/dashboard/profile" icon={UserIcon} label="Perfil do Professor" />
           </nav>
 
           <div className="p-4 border-t border-zinc-200 space-y-3 bg-zinc-50/50">
@@ -78,13 +91,43 @@ export default function DashboardLayout({
 
           {/* Header Desktop (apenas visível em telas grandes) */}
           <header className="hidden md:flex bg-white border-b border-zinc-200 sticky top-0 z-20 px-8 py-3 items-center justify-between shadow-sm">
-            <h2 className="font-semibold text-lg text-zinc-800">
-               {pathname === '/dashboard' ? 'Visão Geral' : pathname === '/dashboard/students' ? 'Gerenciar Alunos' : pathname === '/dashboard/classes' ? 'Agenda de Aulas' : pathname === '/dashboard/payments' ? 'Pagamentos' : 'Dashboard'}
-            </h2>
-            <Button variant="ghost" className="gap-2 text-zinc-600 hover:text-red-600 hover:bg-red-50" onClick={logout}>
-              <LogOut className="w-4 h-4" />
-              <span>Sair</span>
-            </Button>
+            <div className="flex flex-col">
+              <h2 className="font-semibold text-lg text-zinc-800">
+                {pathname === '/dashboard'
+                  ? 'Visão Geral'
+                  : pathname === '/dashboard/students'
+                  ? 'Gerenciar Alunos'
+                  : pathname === '/dashboard/classes'
+                  ? 'Agenda de Aulas'
+                  : pathname === '/dashboard/payments'
+                  ? 'Pagamentos'
+                  : pathname === '/dashboard/profile'
+                  ? 'Perfil do Professor'
+                  : 'Dashboard'}
+              </h2>
+              {pathname === '/dashboard' && (
+                <p className="text-xs text-zinc-500">
+                  Acompanhe rapidamente alunos ativos, receita prevista e vencimentos próximos.
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-4">
+              {user && (
+                <Link href="/dashboard/profile" prefetch={false} className="flex items-center gap-2 text-sm text-zinc-600 hover:text-zinc-900">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold">
+                    {user.name?.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex flex-col leading-tight">
+                    <span className="font-medium">{user.name}</span>
+                    <span className="text-[10px] text-zinc-400 uppercase tracking-wide">Ver perfil</span>
+                  </div>
+                </Link>
+              )}
+              <Button variant="ghost" className="gap-2 text-zinc-600 hover:text-red-600 hover:bg-red-50" onClick={logout}>
+                <LogOut className="w-4 h-4" />
+                <span>Sair</span>
+              </Button>
+            </div>
           </header>
 
           {/* Conteúdo Principal */}

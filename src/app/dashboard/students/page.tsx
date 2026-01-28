@@ -4,7 +4,7 @@ import { useAppStore } from '@/lib/store';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Edit, Trash2, Phone, Search, Send } from 'lucide-react';
+import { Check, Edit, Trash2, Phone, Search, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { useState, useEffect } from 'react';
@@ -17,7 +17,6 @@ export default function StudentsPage() {
   const { token } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'pending' | 'paid'>('all');
-  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -62,74 +61,53 @@ export default function StudentsPage() {
     }
   };
 
-  const handleSendLate = async () => {
-    if (!confirm('Deseja enviar cobrança para TODOS os alunos pendentes e atrasados?')) return;
-    
-    setSending(true);
-    try {
-      const res = await fetch(`${getApiUrl()}/cobrancas/pendentes`, { method: 'POST' });
-      const data = await res.json();
-      
-      
-      if (res.ok) {
-        toast.success(data.message);
-      } else {
-        toast.error(data.message || 'Erro ao enviar cobranças');
-      }
-    } catch (error) {
-      toast.error('Erro de conexão com o servidor');
-    } finally {
-      setSending(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
         <h1 className="text-2xl font-bold text-zinc-900">Meus Alunos</h1>
         
-        {/* Filtros */}
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-zinc-400" />
-            <Input 
-              placeholder="Buscar por nome..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
+        {/* Filtros e ações */}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-zinc-400" />
+              <Input 
+                placeholder="Buscar por nome..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <Button 
+                variant={filter === 'all' ? 'default' : 'outline'} 
+                onClick={() => setFilter('all')}
+                className="flex-1 md:flex-none"
+              >
+                Todos
+              </Button>
+              <Button 
+                variant={filter === 'pending' ? 'default' : 'outline'} 
+                onClick={() => setFilter('pending')}
+                className="flex-1 md:flex-none"
+              >
+                Pendentes
+              </Button>
+              <Button 
+                variant={filter === 'paid' ? 'default' : 'outline'} 
+                onClick={() => setFilter('paid')}
+                className="flex-1 md:flex-none"
+              >
+                Pagos
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            <Button 
-              variant={filter === 'all' ? 'default' : 'outline'} 
-              onClick={() => setFilter('all')}
-              className="flex-1 md:flex-none"
-            >
-              Todos
-            </Button>
-            <Button 
-              variant={filter === 'pending' ? 'default' : 'outline'} 
-              onClick={() => setFilter('pending')}
-              className="flex-1 md:flex-none"
-            >
-              Pendentes
-            </Button>
-            <Button 
-              variant={filter === 'paid' ? 'default' : 'outline'} 
-              onClick={() => setFilter('paid')}
-              className="flex-1 md:flex-none"
-            >
-              Pagos
-            </Button>
-            <Button 
-              variant="default"
-              className="bg-green-600 hover:bg-green-700 text-white flex-1 md:flex-none gap-2 ml-2"
-              onClick={handleSendLate}
-              disabled={sending}
-              title="Enviar cobrança para todos os atrasados"
-            >
-              <Send className="w-4 h-4" />
-              {sending ? 'Enviando...' : 'Enviar'}
+          <div className="flex justify-end">
+            <Button asChild className="gap-2">
+              <Link href="/dashboard/students/new">
+                <Plus className="w-4 h-4" />
+                Novo Aluno
+              </Link>
             </Button>
           </div>
         </div>
@@ -137,8 +115,16 @@ export default function StudentsPage() {
 
       <div className="grid grid-cols-1 gap-4">
         {filteredStudents.length === 0 ? (
-          <div className="text-center py-10 text-zinc-500">
-            Nenhum aluno encontrado.
+          <div className="text-center py-10 text-zinc-500 space-y-4">
+            <p className="text-sm">
+              Nenhum aluno encontrado. Cadastre seu primeiro aluno para começar a acompanhar pagamentos e agenda.
+            </p>
+            <Button asChild className="gap-2">
+              <Link href="/dashboard/students/new">
+                <Plus className="w-4 h-4" />
+                Cadastrar primeiro aluno
+              </Link>
+            </Button>
           </div>
         ) : (
           filteredStudents.map((student) => (

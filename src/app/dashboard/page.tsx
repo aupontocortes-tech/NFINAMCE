@@ -25,6 +25,7 @@ export default function DashboardPage() {
   const { token, logout } = useAuth();
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,9 +48,25 @@ export default function DashboardPage() {
         
         const summary = await res.json();
         setData(summary);
+        setErrorMessage(null);
       } catch (error) {
         console.error(error);
-        toast.error('Erro ao carregar dados do dashboard');
+
+        // Mensagens mais amigáveis quando a API não responde
+        if (error instanceof TypeError) {
+          const friendly =
+            'Não foi possível conectar com o servidor.\n\n' +
+            'Verifique se o backend está rodando em http://localhost:3001 (modo local)\n' +
+            'ou se a variável NEXT_PUBLIC_API_URL foi configurada na Vercel/Render.';
+          setErrorMessage(friendly);
+          toast.error('Falha de conexão com a API. Veja as instruções na tela.');
+        } else if (error instanceof Error) {
+          setErrorMessage(error.message);
+          toast.error(error.message);
+        } else {
+          setErrorMessage('Erro desconhecido ao carregar o dashboard.');
+          toast.error('Erro ao carregar dados do dashboard');
+        }
       } finally {
         setLoading(false);
       }
@@ -75,11 +92,59 @@ export default function DashboardPage() {
     upcomingPayments: []
   };
 
+  const showOnboarding =
+    !errorMessage &&
+    displayData.totalStudents === 0 &&
+    displayData.expectedRevenue === 0 &&
+    displayData.pendingCount === 0;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-zinc-900">Visão Geral</h1>
       </div>
+
+      {/* Alerta amigável quando a API não está acessível */}
+      {errorMessage && (
+        <Card className="border-amber-300 bg-amber-50">
+          <CardHeader>
+            <CardTitle className="text-amber-800">
+              Não conseguimos falar com o servidor 😅
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm text-amber-900 whitespace-pre-line">
+            <p>{errorMessage}</p>
+            <ul className="list-disc list-inside mt-2">
+              <li>
+                <span className="font-semibold">Modo local:</span> abra um terminal, entre em <code>server</code> e rode <code>npm start</code>.
+              </li>
+              <li>
+                <span className="font-semibold">Produção:</span> confirme se o backend na Render está online e se a variável <code>NEXT_PUBLIC_API_URL</code> na Vercel aponta para essa URL.
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Onboarding quando ainda não existem dados */}
+      {showOnboarding && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="text-primary">
+              Bem-vindo(a) ao NFinance! 👋
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-zinc-700">
+            <p>Veja o passo a passo para começar a usar o sistema:</p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>Cadastre seus primeiros alunos na aba <span className="font-semibold">Meus Alunos</span>.</li>
+              <li>Defina o valor da mensalidade e o dia de vencimento de cada aluno.</li>
+              <li>Acompanhe os vencimentos e pendências na aba <span className="font-semibold">Pagamentos</span>.</li>
+              <li>Se quiser automatizar lembretes por e-mail/WhatsApp no futuro, basta configurar as integrações no backend.</li>
+            </ol>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Total Alunos */}

@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": ".",
+			"name": "NFinance - Sistema de Gestão Financeira"
+		}
+	],
+	"settings": {
+		"files.exclude": {
+			"**/.git": true,
+			"**/.DS_Store": true,
+			"**/node_modules": true,
+			"**/.expo": true
+		},
+		"search.exclude": {
+			"**/node_modules": true,
+			"**/.git": true
+		}
+	}
+}

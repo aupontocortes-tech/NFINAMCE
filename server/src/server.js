@@ -43,27 +43,34 @@ app.use((err, req, res, next) => {
 });
 
 // Inicializa DB e importação inicial
-initSchema().then(async () => {
-  try {
-    // Tenta rodar seed/importação se necessário
-    await runInitialSeed2026();
-  } catch (err) {
-    console.error('Erro na inicialização de dados (Seed/Import):', err);
-  }
+initSchema()
+  .then(async () => {
+    try {
+      // Tenta rodar seed/importação se necessário
+      await runInitialSeed2026();
+    } catch (err) {
+      console.error('Erro na inicialização de dados (Seed/Import):', err);
+    }
 
-  // Inicialização
-  app.listen(config.port, () => {
-    console.log(`\n🚀 Servidor V2.1.0 (Render Check) rodando em http://localhost:${config.port}`);
-    console.log(`📝 API Alunos: http://localhost:${config.port}/alunos`);
+    // Inicialização
+    app.listen(config.port, () => {
+      console.log(`\n🚀 Servidor V2.1.0 (Render Check) rodando em http://localhost:${config.port}`);
+      console.log(`📝 API Alunos: http://localhost:${config.port}/alunos`);
 
-    // Inicia o agendamento de tarefas
-    iniciarCron();
+      // Inicia o agendamento de tarefas
+      iniciarCron();
+    });
+  })
+  .catch((err) => {
+    console.error('❌ ERRO CRÍTICO ao inicializar o servidor:', err);
+    console.error('Stack:', err.stack);
+    process.exit(1);
   });
-});
 
 // Tratamento de Processos
 process.on('uncaughtException', (err) => {
   console.error('❌ CRASH: Exceção não tratada:', err);
+  process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {

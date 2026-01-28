@@ -147,7 +147,12 @@ export default function PaymentsPage() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : payments.length === 0 ? (
-            <div className="text-center py-10 text-zinc-500">Nenhum pagamento encontrado para este mês.</div>
+            <div className="text-center py-10 text-zinc-500 space-y-2">
+              <p>Nenhum pagamento encontrado para este mês.</p>
+              <p className="text-xs text-zinc-400">
+                Dica: cadastre alunos na aba <span className="font-semibold">Meus Alunos</span> para gerar mensalidades automaticamente.
+              </p>
+            </div>
           ) : (
             <div className="space-y-4">
               {payments.map((payment) => (
