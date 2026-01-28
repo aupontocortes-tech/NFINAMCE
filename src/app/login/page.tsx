@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, Dumbbell } from 'lucide-react';
+import { Loader2, Dumbbell, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
@@ -33,7 +34,8 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${getApiUrl()}/auth/login`, {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -42,16 +44,27 @@ export default function LoginPage() {
         }),
       });
 
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || `Erro ${response.status}: ${response.statusText}`);
+      }
+
       const result = await response.json();
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Erro ao fazer login');
+      if (!result.token || !result.user) {
+        throw new Error('Resposta inválida do servidor');
       }
 
       login(result.token, result.user);
       toast.success('Login realizado com sucesso!');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erro desconhecido');
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        toast.error('Não foi possível conectar ao servidor. Verifique se o backend está online.');
+        console.error('Erro de conexão:', error);
+      } else {
+        toast.error(error instanceof Error ? error.message : 'Erro desconhecido ao fazer login');
+        console.error('Erro no login:', error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -113,13 +126,22 @@ export default function LoginPage() {
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password" className="text-zinc-200">Senha</Label>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                  {...register('password')}
-                  className="bg-zinc-900 border-zinc-700 text-zinc-50 placeholder:text-zinc-500"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    {...register('password')}
+                    className="bg-zinc-900 border-zinc-700 text-zinc-50 placeholder:text-zinc-500 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
                 {errors.password && (
                   <p className="text-sm text-red-400">{errors.password.message}</p>
                 )}
