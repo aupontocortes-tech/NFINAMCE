@@ -52,10 +52,12 @@ initSchema()
       console.error('Erro na inicialização de dados (Seed/Import):', err);
     }
 
-    // Inicialização
-    app.listen(config.port, () => {
-      console.log(`\n🚀 Servidor V2.1.0 (Render Check) rodando em http://localhost:${config.port}`);
-      console.log(`📝 API Alunos: http://localhost:${config.port}/alunos`);
+    // Inicialização - Render usa PORT dinâmico
+    const PORT = process.env.PORT || config.port;
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`\n🚀 Servidor V2.1.0 rodando na porta ${PORT}`);
+      console.log(`📝 API Alunos: /alunos`);
+      console.log(`💚 Health Check: /health`);
 
       // Inicia o agendamento de tarefas
       iniciarCron();
