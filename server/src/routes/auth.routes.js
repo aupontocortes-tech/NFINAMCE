@@ -6,6 +6,8 @@ const router = Router();
 
 router.post('/register', Auth.register);
 router.post('/login', Auth.login);
+router.post('/social', Auth.social);
+router.get('/resend-status', Auth.resendStatus);
 router.get('/me', authenticateToken, Auth.me);
 
 export default router;

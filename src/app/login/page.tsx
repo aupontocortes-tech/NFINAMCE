@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, Dumbbell, Eye, EyeOff } from 'lucide-react';
+import { signIn } from 'next-auth/react';
+import { Loader2, Dumbbell, Eye, EyeOff, Mail, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -151,6 +152,46 @@ export default function LoginPage() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
+                  disabled={isLoading}
+                  onClick={() => signIn('google', { callbackUrl: '/auth/callback' })}
+                >
+                  <Mail className="h-5 w-5 mr-1" />
+                  Gmail
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
+                  disabled={isLoading}
+                  onClick={() => signIn('facebook', { callbackUrl: '/auth/callback' })}
+                >
+                  <MessageCircle className="h-5 w-5 mr-1" />
+                  Facebook
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
+                  disabled={isLoading}
+                  onClick={() => signIn('twitter', { callbackUrl: '/auth/callback' })}
+                >
+                  <MessageCircle className="h-5 w-5 mr-1" />
+                  Twitter
+                </Button>
+              </div>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-zinc-600" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase text-zinc-500">
+                  ou entre com e-mail
+                </div>
+              </div>
               <Button className="w-full h-11" type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Entrar

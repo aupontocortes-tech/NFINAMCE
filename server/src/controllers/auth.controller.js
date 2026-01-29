@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { db } from '../data/db.js';
@@ -82,6 +83,59 @@ export const login = async (req, res) => {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Erro ao fazer login.' });
   }
+};
+
+/** Login/cadastro via rede social (Google, Facebook, Twitter). Cria usuário se não existir. */
+export const social = async (req, res) => {
+  const { email, name } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'E-mail é obrigatório.' });
+  }
+
+  try {
+    let user = await db('users').where({ email }).first();
+    if (!user) {
+      const hashedPassword = await bcrypt.hash(
+        crypto.randomBytes(32).toString('hex'),
+        10
+      );
+      const [inserted] = await db('users')
+        .insert({
+          name: name || email.split('@')[0],
+          email,
+          password: hashedPassword,
+        })
+        .returning(['id', 'name', 'email']);
+      user = inserted;
+      if (!user?.id) {
+        user = await db('users').where({ email }).first();
+      }
+    }
+    if (!user) {
+      return res.status(500).json({ error: 'Erro ao criar ou buscar usuário.' });
+    }
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({ user: userWithoutPassword, token });
+  } catch (error) {
+    console.error('Social auth error:', error);
+    res.status(500).json({ error: 'Erro ao autenticar com rede social.' });
+  }
+};
+
+/** Verifica se a API Resend está configurada (envio de e-mails). */
+export const resendStatus = async (_req, res) => {
+  const configured = !!process.env.RESEND_API_KEY;
+  res.json({
+    resend: configured,
+    message: configured
+      ? 'API Resend configurada. E-mails serão enviados via Resend.'
+      : 'RESEND_API_KEY não definida. Configure em server/.env (veja CONFIGURAR_RESEND.md).',
+  });
 };
 
 export const me = async (req, res) => {

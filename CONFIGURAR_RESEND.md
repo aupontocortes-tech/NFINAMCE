@@ -48,6 +48,19 @@ Se não configurar, verá:
 ⚠️ Serviço de E-mail: RESEND_API_KEY não encontrada. Usando fallback.
 ```
 
+### Testar via API
+
+Com o backend rodando, chame:
+
+```
+GET http://localhost:3001/auth/resend-status
+```
+
+Resposta se estiver configurado: `{ "resend": true, "message": "API Resend configurada..." }`  
+Resposta se não estiver: `{ "resend": false, "message": "RESEND_API_KEY não definida..." }`
+
+**Nota:** O serviço de e-mail do projeto é a API **Resend** (resend.com), não "Resende". Os e-mails (boas-vindas no cadastro, cobranças etc.) só são enviados de verdade quando `RESEND_API_KEY` está definida em `server/.env`.
+
 ## 🎯 Domínio Verificado (Opcional)
 
 Por padrão, o Resend usa `onboarding@resend.dev` (funciona para testes).
