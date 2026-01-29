@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "setup:auth": "node scripts/ensure-auth-secret.js",
     "postinstall": "echo 'Skipping puppeteer install in production'"
   },
   "dependencies": {

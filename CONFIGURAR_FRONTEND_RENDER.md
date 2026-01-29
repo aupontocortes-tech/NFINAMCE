@@ -1,8 +1,18 @@
 # ⚙️ Configurar Frontend na Render - SOLUÇÃO DO LOGIN
 
-## 🔴 Problema Atual
+## 🔴 Se aparecer "Server error" ou "There is a problem with the server configuration"
 
-O frontend não consegue conectar ao backend porque a variável `NEXT_PUBLIC_API_URL` não está configurada.
+Isso acontece quando o **AUTH_SECRET** não está definido no frontend (Render). Siga o passo **2** abaixo e adicione `AUTH_SECRET`. Depois faça **Redeploy**.
+
+## 🔴 Se o site não atualizou no Render depois do push
+
+O Render **não atualiza sozinho** a menos que o auto-deploy esteja ligado. Faça um **Manual Deploy** (passo 3) para publicar a última versão do código.
+
+---
+
+## 🔴 Problema: frontend não conecta ao backend
+
+O frontend não consegue conectar ao backend porque a variável `NEXT_PUBLIC_API_URL` não está configurada (ou `AUTH_SECRET` está faltando).
 
 ---
 
@@ -14,21 +24,25 @@ O frontend não consegue conectar ao backend porque a variável `NEXT_PUBLIC_API
 2. Encontre o serviço do **frontend** (provavelmente `nfinance-frontend` ou `nfinance-site`)
 3. Clique nele
 
-### 2. Configure a Variável de Ambiente
+### 2. Configure as Variáveis de Ambiente
 
 1. Vá em **Settings** → **Environment**
-2. Clique em **"Add Environment Variable"**
-3. Adicione:
+2. Clique em **"Add Environment Variable"** e adicione **todas** estas variáveis:
 
-   **Key:** `NEXT_PUBLIC_API_URL`
-   
-   **Value:** `https://nfinamce.onrender.com`
-   
-   (Use a URL real do seu backend na Render)
+   | Key | Value |
+   |-----|-------|
+   | `NEXT_PUBLIC_API_URL` | `https://nfinamce.onrender.com` (ou a URL do seu backend na Render) |
+   | `AUTH_SECRET` | Um segredo aleatório (gere com `npx auth secret` ou use uma string longa e segura) |
 
-4. Clique em **"Save Changes"**
+   **Por quê:** Sem `AUTH_SECRET`, o NextAuth mostra "Server error - There is a problem with the server configuration" ao tentar fazer login.
 
-### 3. Faça Redeploy
+3. Clique em **"Save Changes"**
+
+### 3. Faça Redeploy (obrigatório após push ou mudança de variáveis)
+
+1. Vá em **"Manual Deploy"** → **"Deploy latest commit"** (ou **"Redeploy"** no último deploy)
+2. Aguarde 2–5 minutos até o build terminar
+3. **O site só atualiza no Render depois do redeploy.** Se você fez push e não viu mudanças, é porque precisa disparar o deploy manualmente (ou configurar auto-deploy pelo GitHub no serviço).
 
 1. Vá em **"Manual Deploy"** ou clique nos **3 pontinhos** (⋮) do último deploy
 2. Selecione **"Redeploy"**

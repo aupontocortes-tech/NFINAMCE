@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,14 +23,32 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
+type SocialProviders = { google: boolean; facebook: boolean; twitter: boolean };
+
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [socialProviders, setSocialProviders] = useState<SocialProviders | null>(null);
   const { login } = useAuth();
+
+  useEffect(() => {
+    fetch('/api/auth/providers')
+      .then((res) => res.json())
+      .then((data: SocialProviders) => setSocialProviders(data))
+      .catch(() => setSocialProviders({ google: false, facebook: false, twitter: false }));
+  }, []);
   
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   });
+
+  const handleSocialLogin = (provider: 'google' | 'facebook' | 'twitter') => {
+    signIn(provider, { callbackUrl: '/auth/callback' }).then((res) => {
+      if (res?.error) {
+        toast.error('Erro ao conectar. Use e-mail e senha ou configure as credenciais (veja LOGIN_SOCIAL.md).');
+      }
+    });
+  };
 
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
@@ -152,46 +170,61 @@ export default function LoginPage() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-              <div className="grid grid-cols-3 gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
-                  disabled={isLoading}
-                  onClick={() => signIn('google', { callbackUrl: '/auth/callback' })}
-                >
-                  <Mail className="h-5 w-5 mr-1" />
-                  Gmail
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
-                  disabled={isLoading}
-                  onClick={() => signIn('facebook', { callbackUrl: '/auth/callback' })}
-                >
-                  <MessageCircle className="h-5 w-5 mr-1" />
-                  Facebook
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
-                  disabled={isLoading}
-                  onClick={() => signIn('twitter', { callbackUrl: '/auth/callback' })}
-                >
-                  <MessageCircle className="h-5 w-5 mr-1" />
-                  Twitter
-                </Button>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-zinc-600" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase text-zinc-500">
-                  ou entre com e-mail
-                </div>
-              </div>
+              {socialProviders && (socialProviders.google || socialProviders.facebook || socialProviders.twitter) && (
+                <>
+                  <div className="grid grid-cols-3 gap-2">
+                    {socialProviders.google && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
+                        disabled={isLoading}
+                        onClick={() => handleSocialLogin('google')}
+                      >
+                        <Mail className="h-5 w-5 mr-1" />
+                        Gmail
+                      </Button>
+                    )}
+                    {socialProviders.facebook && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
+                        disabled={isLoading}
+                        onClick={() => handleSocialLogin('facebook')}
+                      >
+                        <MessageCircle className="h-5 w-5 mr-1" />
+                        Facebook
+                      </Button>
+                    )}
+                    {socialProviders.twitter && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
+                        disabled={isLoading}
+                        onClick={() => handleSocialLogin('twitter')}
+                      >
+                        <MessageCircle className="h-5 w-5 mr-1" />
+                        Twitter
+                      </Button>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-zinc-600" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase text-zinc-500">
+                      ou entre com e-mail
+                    </div>
+                  </div>
+                </>
+              )}
+              {socialProviders && !socialProviders.google && !socialProviders.facebook && !socialProviders.twitter && (
+                <p className="text-xs text-zinc-500 text-center">
+                  Para entrar com Gmail, Facebook ou Twitter, configure as credenciais no servidor (veja LOGIN_SOCIAL.md).
+                </p>
+              )}
               <Button className="w-full h-11" type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Entrar
