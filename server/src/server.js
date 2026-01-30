@@ -14,8 +14,18 @@ import { runInitialSeed2026 } from './services/seed2026.service.js';
 
 const app = express();
 
-// Middlewares
-app.use(cors());
+// CORS: permite frontend em localhost e na Render (conexão frontend ↔ backend)
+const corsOptions = {
+  origin: (origin, cb) => {
+    const ok = !origin ||
+      origin === 'http://localhost:3000' ||
+      origin === 'http://127.0.0.1:3000' ||
+      (origin && origin.endsWith('.onrender.com'));
+    cb(null, ok);
+  },
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Rotas

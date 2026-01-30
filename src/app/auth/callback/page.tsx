@@ -51,7 +51,12 @@ export default function AuthCallbackPage() {
         toast.success('Entrada feita com sucesso!');
         router.replace('/dashboard');
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : 'Erro ao entrar.');
+        const msg = e instanceof Error ? e.message : 'Erro ao entrar.';
+        if (msg.includes('fetch') || msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+          toast.error('Backend não está rodando. Inicie o backend na pasta server (npm start) e tente novamente.');
+        } else {
+          toast.error(msg);
+        }
         router.replace('/login');
       } finally {
         setSyncing(false);

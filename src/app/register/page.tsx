@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, Dumbbell, Eye, EyeOff } from 'lucide-react';
+import { signIn } from 'next-auth/react';
+import { Loader2, Dumbbell, Eye, EyeOff, Mail, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { getApiUrl } from '@/lib/utils';
+
+type SocialProviders = { google: boolean; facebook: boolean; twitter: boolean };
 
 const registerSchema = z.object({
   name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
@@ -31,7 +34,32 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [socialProviders, setSocialProviders] = useState<SocialProviders | null>(null);
   const { login } = useAuth();
+
+  useEffect(() => {
+    fetch('/api/auth/providers')
+      .then((res) => res.json())
+      .then((data: SocialProviders) => setSocialProviders(data))
+      .catch(() => setSocialProviders({ google: false, facebook: false, twitter: false }));
+  }, []);
+
+  const handleSocialLogin = (provider: 'google' | 'facebook' | 'twitter') => {
+    const configured = socialProviders && (
+      (provider === 'google' && socialProviders.google) ||
+      (provider === 'facebook' && socialProviders.facebook) ||
+      (provider === 'twitter' && socialProviders.twitter)
+    );
+    if (!configured) {
+      const names = { google: 'Gmail', facebook: 'Facebook', twitter: 'Twitter' };
+      const envVars = { google: 'AUTH_GOOGLE_ID e AUTH_GOOGLE_SECRET', facebook: 'AUTH_FACEBOOK_ID e AUTH_FACEBOOK_SECRET', twitter: 'AUTH_TWITTER_ID e AUTH_TWITTER_SECRET' };
+      toast.error(`Para ativar login com ${names[provider]}, adicione ${envVars[provider]} no .env.local (veja LOGIN_SOCIAL.md).`);
+      return;
+    }
+    signIn(provider, { callbackUrl: '/auth/callback' }).then((res) => {
+      if (res?.error) toast.error('Erro ao conectar. Tente novamente ou cadastre-se com e-mail.');
+    });
+  };
   
   const { register, handleSubmit, formState: { errors } } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -183,6 +211,49 @@ export default function RegisterPage() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
+                  disabled={isLoading}
+                  onClick={() => handleSocialLogin('google')}
+                >
+                  <Mail className="h-5 w-5 mr-1" />
+                  Gmail
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
+                  disabled={isLoading}
+                  onClick={() => handleSocialLogin('facebook')}
+                >
+                  <MessageCircle className="h-5 w-5 mr-1" />
+                  Facebook
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
+                  disabled={isLoading}
+                  onClick={() => handleSocialLogin('twitter')}
+                >
+                  <MessageCircle className="h-5 w-5 mr-1" />
+                  Twitter
+                </Button>
+              </div>
+              <p className="text-xs text-zinc-500 text-center">
+                Cadastre-se com Gmail, Facebook ou Twitter e entre direto no aplicativo.
+              </p>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-zinc-600" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase text-zinc-500">
+                  ou cadastre-se com e-mail
+                </div>
+              </div>
               <Button className="w-full h-11" type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Criar conta

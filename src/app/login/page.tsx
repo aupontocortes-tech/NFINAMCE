@@ -43,9 +43,20 @@ export default function LoginPage() {
   });
 
   const handleSocialLogin = (provider: 'google' | 'facebook' | 'twitter') => {
+    const configured = socialProviders && (
+      (provider === 'google' && socialProviders.google) ||
+      (provider === 'facebook' && socialProviders.facebook) ||
+      (provider === 'twitter' && socialProviders.twitter)
+    );
+    if (!configured) {
+      const names = { google: 'Gmail', facebook: 'Facebook', twitter: 'Twitter' };
+      const envVars = { google: 'AUTH_GOOGLE_ID e AUTH_GOOGLE_SECRET', facebook: 'AUTH_FACEBOOK_ID e AUTH_FACEBOOK_SECRET', twitter: 'AUTH_TWITTER_ID e AUTH_TWITTER_SECRET' };
+      toast.error(`Para ativar login com ${names[provider]}, adicione ${envVars[provider]} no .env.local (veja LOGIN_SOCIAL.md).`);
+      return;
+    }
     signIn(provider, { callbackUrl: '/auth/callback' }).then((res) => {
       if (res?.error) {
-        toast.error('Erro ao conectar. Use e-mail e senha ou configure as credenciais (veja LOGIN_SOCIAL.md).');
+        toast.error('Erro ao conectar. Tente novamente ou use e-mail e senha.');
       }
     });
   };
@@ -170,61 +181,49 @@ export default function LoginPage() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-              {socialProviders && (socialProviders.google || socialProviders.facebook || socialProviders.twitter) && (
-                <>
-                  <div className="grid grid-cols-3 gap-2">
-                    {socialProviders.google && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
-                        disabled={isLoading}
-                        onClick={() => handleSocialLogin('google')}
-                      >
-                        <Mail className="h-5 w-5 mr-1" />
-                        Gmail
-                      </Button>
-                    )}
-                    {socialProviders.facebook && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
-                        disabled={isLoading}
-                        onClick={() => handleSocialLogin('facebook')}
-                      >
-                        <MessageCircle className="h-5 w-5 mr-1" />
-                        Facebook
-                      </Button>
-                    )}
-                    {socialProviders.twitter && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
-                        disabled={isLoading}
-                        onClick={() => handleSocialLogin('twitter')}
-                      >
-                        <MessageCircle className="h-5 w-5 mr-1" />
-                        Twitter
-                      </Button>
-                    )}
-                  </div>
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t border-zinc-600" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase text-zinc-500">
-                      ou entre com e-mail
-                    </div>
-                  </div>
-                </>
-              )}
-              {socialProviders && !socialProviders.google && !socialProviders.facebook && !socialProviders.twitter && (
-                <p className="text-xs text-zinc-500 text-center">
-                  Para entrar com Gmail, Facebook ou Twitter, configure as credenciais no servidor (veja LOGIN_SOCIAL.md).
-                </p>
-              )}
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
+                  disabled={isLoading}
+                  onClick={() => handleSocialLogin('google')}
+                >
+                  <Mail className="h-5 w-5 mr-1" />
+                  Gmail
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
+                  disabled={isLoading}
+                  onClick={() => handleSocialLogin('facebook')}
+                >
+                  <MessageCircle className="h-5 w-5 mr-1" />
+                  Facebook
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
+                  disabled={isLoading}
+                  onClick={() => handleSocialLogin('twitter')}
+                >
+                  <MessageCircle className="h-5 w-5 mr-1" />
+                  Twitter
+                </Button>
+              </div>
+              <p className="text-xs text-zinc-500 text-center">
+                Entrar com Gmail, Facebook ou Twitter e acessar direto o aplicativo.
+              </p>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-zinc-600" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase text-zinc-500">
+                  ou entre com e-mail
+                </div>
+              </div>
               <Button className="w-full h-11" type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Entrar
