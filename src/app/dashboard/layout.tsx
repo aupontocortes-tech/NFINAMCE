@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, LogOut, Dumbbell, Clock, User as UserIcon } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, Dumbbell, Clock, User as UserIcon, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
@@ -62,6 +62,7 @@ export default function DashboardLayout({
             <SidebarLink href="/dashboard/students" icon={Users} label="Meus Alunos" />
             <SidebarLink href="/dashboard/classes" icon={Clock} label="Agenda de Aulas" />
             <SidebarLink href="/dashboard/payments" icon={LayoutDashboard} label="Pagamentos" />
+            <SidebarLink href="/dashboard/push" icon={Bell} label="Push" />
             <SidebarLink href="/dashboard/profile" icon={UserIcon} label="Perfil do Professor" />
           </nav>
 
@@ -101,6 +102,8 @@ export default function DashboardLayout({
                   ? 'Agenda de Aulas'
                   : pathname === '/dashboard/payments'
                   ? 'Pagamentos'
+                  : pathname === '/dashboard/push'
+                  ? 'Push'
                   : pathname === '/dashboard/profile'
                   ? 'Perfil do Professor'
                   : 'Dashboard'}
@@ -136,7 +139,7 @@ export default function DashboardLayout({
           </main>
 
           {/* Bottom Navigation Mobile */}
-          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-200 pb-safe pt-2 px-6 flex justify-around items-center z-20 safe-area-bottom">
+          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-200 pb-safe pt-2 px-4 flex justify-around items-center z-20 safe-area-bottom">
             <Link href="/dashboard" prefetch={false} className={`flex flex-col items-center gap-1 p-2 rounded-lg ${isActive('/dashboard') ? 'text-primary' : 'text-zinc-500'}`}>
               <LayoutDashboard className="w-6 h-6" />
               <span className="text-[10px] font-medium">Início</span>
@@ -148,6 +151,10 @@ export default function DashboardLayout({
             <Link href="/dashboard/classes" prefetch={false} className={`flex flex-col items-center gap-1 p-2 rounded-lg ${isActive('/dashboard/classes') ? 'text-primary' : 'text-zinc-500'}`}>
               <Clock className="w-6 h-6" />
               <span className="text-[10px] font-medium">Agenda</span>
+            </Link>
+            <Link href="/dashboard/push" prefetch={false} className={`flex flex-col items-center gap-1 p-2 rounded-lg ${isActive('/dashboard/push') ? 'text-primary' : 'text-zinc-500'}`}>
+              <Bell className="w-6 h-6" />
+              <span className="text-[10px] font-medium">Push</span>
             </Link>
             <Link href="/dashboard/payments" prefetch={false} className={`flex flex-col items-center gap-1 p-2 rounded-lg ${isActive('/dashboard/payments') ? 'text-primary' : 'text-zinc-500'}`}>
               <LayoutDashboard className="w-6 h-6" />

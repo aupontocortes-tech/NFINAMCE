@@ -51,7 +51,9 @@ export default function LoginPage() {
     if (!configured) {
       const names = { google: 'Gmail', facebook: 'Facebook', twitter: 'Twitter' };
       const envVars = { google: 'AUTH_GOOGLE_ID e AUTH_GOOGLE_SECRET', facebook: 'AUTH_FACEBOOK_ID e AUTH_FACEBOOK_SECRET', twitter: 'AUTH_TWITTER_ID e AUTH_TWITTER_SECRET' };
-      toast.error(`Para ativar login com ${names[provider]}, adicione ${envVars[provider]} no .env.local (veja LOGIN_SOCIAL.md).`);
+      const isRender = typeof window !== 'undefined' && window.location.hostname.includes('onrender.com');
+      const where = isRender ? 'no painel do Render (Environment do serviço front-end)' : 'no .env.local';
+      toast.error(`Para ativar login com ${names[provider]}, adicione ${envVars[provider]} ${where}.`);
       return;
     }
     signIn(provider, { callbackUrl: '/auth/callback' }).then((res) => {
@@ -106,8 +108,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-950 to-slate-900 flex items-center justify-center px-4">
       <div className="max-w-5xl w-full grid md:grid-cols-[1.2fr,1fr] gap-10 items-center">
-        <div className="hidden md:flex flex-col gap-6 text-zinc-100">
-          <div className="flex items-center gap-3">
+        <div className="hidden md:flex flex-col gap-6 text-zinc-100 items-center text-center">
+          <div className="flex flex-col items-center gap-3">
             <div className="bg-primary/10 p-2 rounded-xl">
               <Dumbbell className="w-7 h-7 text-primary" />
             </div>
@@ -120,27 +122,27 @@ export default function LoginPage() {
             Organize seus alunos, automatize cobranças e acompanhe recebimentos em um só lugar.
             Pensado para personal trainers que querem profissionalizar o dia a dia.
           </p>
-          <div className="grid grid-cols-2 gap-4 text-xs">
-            <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+          <div className="flex flex-col gap-4 w-full max-w-xs mx-auto text-xs">
+            <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-left">
               <p className="font-semibold text-zinc-100 mb-1">Visão financeira clara</p>
               <p className="text-zinc-300">Saiba quem já pagou, quem está pendente e quanto ainda vai entrar.</p>
             </div>
-            <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+            <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-left">
               <p className="font-semibold text-zinc-100 mb-1">Agenda organizada</p>
               <p className="text-zinc-300">Visualize aulas da semana e evite conflitos de horário.</p>
             </div>
           </div>
         </div>
 
-        <Card className="w-full max-w-md mx-auto shadow-2xl border-zinc-800 bg-zinc-950/90 backdrop-blur">
-          <CardHeader className="space-y-2">
-            <CardTitle className="text-2xl font-bold text-zinc-50">Entrar no NFinance</CardTitle>
-            <CardDescription className="text-zinc-400">
+        <Card className="w-full max-w-md mx-auto rounded-2xl shadow-xl shadow-black/20 border border-zinc-700/50 bg-zinc-900/80 backdrop-blur-sm ring-1 ring-white/5 overflow-hidden">
+          <CardHeader className="space-y-2 pb-2 pt-8 px-8">
+            <CardTitle className="text-2xl font-semibold text-zinc-50 tracking-tight">Entrar no NFinance</CardTitle>
+            <CardDescription className="text-zinc-400 text-sm leading-relaxed">
               Acesse seu painel para acompanhar alunos, agenda e financeiro.
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 px-8 pt-2">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-zinc-200">E-mail</Label>
                 <Input
@@ -149,7 +151,7 @@ export default function LoginPage() {
                   placeholder="seu@email.com"
                   autoComplete="email"
                   {...register('email')}
-                  className="bg-zinc-900 border-zinc-700 text-zinc-50 placeholder:text-zinc-500"
+                  className="bg-zinc-800/50 border-zinc-600/80 rounded-lg text-zinc-50 placeholder:text-zinc-500 focus-visible:ring-primary/30"
                 />
                 {errors.email && (
                   <p className="text-sm text-red-400">{errors.email.message}</p>
@@ -165,7 +167,7 @@ export default function LoginPage() {
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
                     {...register('password')}
-                    className="bg-zinc-900 border-zinc-700 text-zinc-50 placeholder:text-zinc-500 pr-10"
+                    className="bg-zinc-800/50 border-zinc-600/80 rounded-lg text-zinc-50 placeholder:text-zinc-500 pr-10 focus-visible:ring-primary/30"
                   />
                   <button
                     type="button"
@@ -180,12 +182,12 @@ export default function LoginPage() {
                 )}
               </div>
             </CardContent>
-            <CardFooter className="flex flex-col gap-4">
+            <CardFooter className="flex flex-col gap-4 px-8 pb-8 pt-2">
               <div className="grid grid-cols-3 gap-2">
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
+                  className="h-11 rounded-lg border-zinc-600/80 bg-zinc-800/50 hover:bg-zinc-700/50 hover:border-zinc-500 text-zinc-200 transition-colors"
                   disabled={isLoading}
                   onClick={() => handleSocialLogin('google')}
                 >
@@ -195,7 +197,7 @@ export default function LoginPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
+                  className="h-11 rounded-lg border-zinc-600/80 bg-zinc-800/50 hover:bg-zinc-700/50 hover:border-zinc-500 text-zinc-200 transition-colors"
                   disabled={isLoading}
                   onClick={() => handleSocialLogin('facebook')}
                 >
@@ -205,7 +207,7 @@ export default function LoginPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-11 border-zinc-600 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
+                  className="h-11 rounded-lg border-zinc-600/80 bg-zinc-800/50 hover:bg-zinc-700/50 hover:border-zinc-500 text-zinc-200 transition-colors"
                   disabled={isLoading}
                   onClick={() => handleSocialLogin('twitter')}
                 >
@@ -218,13 +220,13 @@ export default function LoginPage() {
               </p>
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-zinc-600" />
+                  <span className="w-full border-t border-zinc-600/60" />
                 </div>
-                <div className="relative flex justify-center text-xs uppercase text-zinc-500">
+                <div className="relative flex justify-center text-xs uppercase tracking-wide text-zinc-500">
                   ou entre com e-mail
                 </div>
               </div>
-              <Button className="w-full h-11" type="submit" disabled={isLoading}>
+              <Button className="w-full h-11 rounded-lg font-medium transition-all hover:opacity-95" type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Entrar
               </Button>

@@ -24,17 +24,21 @@ O frontend não consegue conectar ao backend porque a variável `NEXT_PUBLIC_API
 2. Encontre o serviço do **frontend** (provavelmente `nfinance-frontend` ou `nfinance-site`)
 3. Clique nele
 
-### 2. Configure as Variáveis de Ambiente
+### 2. Configure as Variáveis de Ambiente (obrigatório para o "Server error" sumir)
 
 1. Vá em **Settings** → **Environment**
-2. Clique em **"Add Environment Variable"** e adicione **todas** estas variáveis:
+2. Clique em **"Add Environment Variable"** e adicione **todas** estas variáveis (troque pelos seus valores):
 
    | Key | Value |
    |-----|-------|
-   | `NEXT_PUBLIC_API_URL` | `https://nfinamce.onrender.com` (ou a URL do seu backend na Render) |
-   | `AUTH_SECRET` | Um segredo aleatório (gere com `npx auth secret` ou use uma string longa e segura) |
+   | `AUTH_SECRET` | Um segredo aleatório (ex.: o mesmo do seu `.env.local` ou gere com `npx auth secret`) |
+   | `AUTH_URL` | **URL do seu frontend na Render** (ex.: `https://nfinance.onrender.com`) |
+   | `NEXTAUTH_URL` | **Mesma URL do frontend** (ex.: `https://nfinance.onrender.com`) |
+   | `AUTH_GOOGLE_ID` | O ID do cliente OAuth do Google (ex.: `766173592030-xxx.apps.googleusercontent.com`) |
+   | `AUTH_GOOGLE_SECRET` | O Segredo do cliente OAuth do Google |
+   | `NEXT_PUBLIC_API_URL` | URL do **backend** na Render (ex.: `https://nfinamce.onrender.com`) |
 
-   **Por quê:** Sem `AUTH_SECRET`, o NextAuth mostra "Server error - There is a problem with the server configuration" ao tentar fazer login.
+   **Importante:** Sem `AUTH_SECRET`, `AUTH_URL` e `NEXTAUTH_URL`, o NextAuth mostra "Server error - There is a problem with the server configuration" na Render.
 
 3. Clique em **"Save Changes"**
 
@@ -81,12 +85,35 @@ Se aparecer essa mensagem, está configurado corretamente!
 
 ## 📋 Checklist
 
-- [ ] Variável `NEXT_PUBLIC_API_URL` adicionada
-- [ ] Valor da variável = URL do backend (ex: `https://nfinamce.onrender.com`)
-- [ ] Redeploy feito após adicionar variável
+- [ ] `AUTH_SECRET` adicionado
+- [ ] `AUTH_URL` e `NEXTAUTH_URL` = URL do frontend na Render (ex.: `https://nfinance.onrender.com`)
+- [ ] `AUTH_GOOGLE_ID` e `AUTH_GOOGLE_SECRET` adicionados (para login com Gmail)
+- [ ] `NEXT_PUBLIC_API_URL` = URL do backend (ex.: `https://nfinamce.onrender.com`)
+- [ ] Redeploy feito após adicionar variáveis
 - [ ] Backend está online (`/health` retorna OK)
-- [ ] Testado login novamente
+- [ ] No Google Cloud, URI de redirecionamento da Render adicionada (veja abaixo)
 
 ---
 
-**Depois de configurar, o login deve funcionar!** 🎉
+## 🔑 Configuração no Google (para o Gmail funcionar na Render)
+
+Para o botão **Gmail** funcionar no site na Render, você precisa adicionar a URL da Render no Google Cloud:
+
+1. Acesse [Google Cloud Console](https://console.cloud.google.com) → **APIs e serviços** → **Credenciais**
+2. Clique no seu **ID do cliente OAuth** (o que você criou para o NFinance)
+3. Em **"URIs de redirecionamento autorizados"**, clique em **"+ Adicionar URI"**
+4. Adicione **exatamente** (troque pela URL real do seu frontend na Render):
+   ```
+   https://SEU-FRONTEND.onrender.com/api/auth/callback/google
+   ```
+   Exemplo: se o frontend na Render for `https://nfinance.onrender.com`, use:
+   ```
+   https://nfinance.onrender.com/api/auth/callback/google
+   ```
+5. Clique em **Salvar**
+
+Sem essa URI, o Google bloqueia o redirect após o login e o Gmail não funciona na Render.
+
+---
+
+**Depois de configurar, o "Server error" some e o login deve funcionar!** 🎉

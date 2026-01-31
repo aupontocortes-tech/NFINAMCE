@@ -15,15 +15,20 @@ import { runInitialSeed2026 } from './services/seed2026.service.js';
 const app = express();
 
 // CORS: permite frontend em localhost e na Render (conexão frontend ↔ backend)
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'https://nfinance-site.onrender.com',
+];
 const corsOptions = {
   origin: (origin, cb) => {
     const ok = !origin ||
-      origin === 'http://localhost:3000' ||
-      origin === 'http://127.0.0.1:3000' ||
+      allowedOrigins.includes(origin) ||
       (origin && origin.endsWith('.onrender.com'));
     cb(null, ok);
   },
   credentials: true,
+  optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
 app.use(express.json());

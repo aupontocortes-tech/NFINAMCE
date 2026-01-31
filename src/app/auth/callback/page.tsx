@@ -33,6 +33,10 @@ export default function AuthCallbackPage() {
       setSyncing(true);
       try {
         const apiUrl = getApiUrl();
+        const isRender = typeof window !== 'undefined' && window.location.hostname.includes('onrender.com');
+        const controller = new AbortController();
+        const timeout = isRender ? 25000 : 10000;
+        const id = setTimeout(() => controller.abort(), timeout);
         const res = await fetch(`${apiUrl}/auth/social`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -40,10 +44,13 @@ export default function AuthCallbackPage() {
             email: session.user.email,
             name: session.user.name ?? session.user.email.split('@')[0],
           }),
+          signal: controller.signal,
         });
+        clearTimeout(id);
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || 'Erro ao conectar com o aplicativo.');
+          const msg = data.error || 'Erro ao conectar com o aplicativo.';
+          throw new Error(msg);
         }
         const { token, user } = await res.json();
         if (!token || !user) throw new Error('Resposta inválida.');
@@ -52,10 +59,13 @@ export default function AuthCallbackPage() {
         router.replace('/dashboard');
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Erro ao entrar.';
-        if (msg.includes('fetch') || msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
-          toast.error('Backend não está rodando. Inicie o backend na pasta server (npm start) e tente novamente.');
+        const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+        const isRender = typeof window !== 'undefined' && window.location.hostname.includes('onrender.com');
+        const isAbort = e instanceof Error && e.name === 'AbortError';
+        if (isAbort || msg.includes('fetch') || msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+          toast.error(isLocal ? 'Backend não está rodando. Use iniciar-tudo.bat (ou inicie o backend na pasta server) e tente novamente.' : isRender ? 'Servidor em repouso. Aguarde 1–2 minutos, atualize a página e tente o login de novo.' : 'Não foi possível conectar ao servidor. Tente novamente em instantes.');
         } else {
-          toast.error(msg);
+          toast.error(isLocal ? `${msg} Verifique se o backend está rodando em http://localhost:3001` : isRender ? 'Servidor pode estar acordando. Aguarde 1–2 min, tente novamente ou use e-mail e senha.' : msg);
         }
         router.replace('/login');
       } finally {
