@@ -37,24 +37,11 @@ export default function DashboardLayout({
       <div className="min-h-screen bg-zinc-50 flex">
         {/* Sidebar Desktop (Lado Esquerdo) */}
         <aside className="hidden md:flex flex-col w-64 bg-white border-r border-zinc-200 fixed inset-y-0 z-30">
-          <div className="p-6 border-b border-zinc-200 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <Dumbbell className="text-primary w-6 h-6" />
-              </div>
-              <span className="font-bold text-xl text-zinc-900 tracking-tight">NFinance</span>
+          <div className="p-6 border-b border-zinc-200 flex items-center gap-2">
+            <div className="bg-primary/10 p-2 rounded-lg">
+              <Dumbbell className="text-primary w-6 h-6" />
             </div>
-            {user && (
-              <Link href="/dashboard/profile" prefetch={false} className="flex items-center gap-2 text-sm text-zinc-600 hover:text-zinc-900">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold">
-                  {user.name?.charAt(0).toUpperCase()}
-                </div>
-                <div className="flex flex-col leading-tight">
-                  <span className="font-medium truncate max-w-[120px]">{user.name}</span>
-                  <span className="text-[10px] text-zinc-400 uppercase tracking-wide">Perfil</span>
-                </div>
-              </Link>
-            )}
+            <span className="font-bold text-xl text-zinc-900 tracking-tight">NFinance</span>
           </div>
 
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto">

@@ -236,6 +236,11 @@ export default function LoginPage() {
                   Cadastre-se gratuitamente
                 </Link>
               </div>
+              <div className="text-center pt-2">
+                <Link href="/app" className="text-xs text-zinc-500 hover:text-zinc-400 inline-flex items-center gap-1">
+                  Abrir no celular
+                </Link>
+              </div>
             </CardFooter>
           </form>
         </Card>
