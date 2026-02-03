@@ -1,43 +1,32 @@
+# NFinance - Deploy na Render com um clique
+# Conecte este repositório em render.com → New → Blueprint e selecione este repo.
+# A Render criará backend e frontend automaticamente.
+
 services:
-  # Backend Service
+  # Backend (API)
   - type: web
-    name: nfinance-backend
+    name: nfinamce
     runtime: node
     plan: free
+    rootDir: server
     buildCommand: npm install
     startCommand: npm start
-    rootDir: server
     envVars:
       - key: NODE_ENV
         value: production
-      - key: JWT_SECRET
-        generateValue: true
-      - key: RESEND_API_KEY
-        sync: false
-      - key: DATABASE_URL
-        fromDatabase:
-          name: nfinance-db
-          property: connectionString
+    # Adicione no Dashboard: JWT_SECRET, DATABASE_URL (se usar Postgres), etc.
 
-  # Frontend Service
+  # Frontend (Next.js)
   - type: web
     name: nfinance-frontend
     runtime: node
     plan: free
+    # rootDir é a raiz do repo (frontend fica na raiz)
     buildCommand: npm install && npm run build
     startCommand: npm start
-    rootDir: .
     envVars:
       - key: NODE_ENV
         value: production
-      - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: nfinance-backend
-          property: host
-
-databases:
-  - name: nfinance-db
-    plan: free
-    databaseName: nfinance
-    user: nfinance_user
+      # Se o backend tiver outra URL, defina no Dashboard:
+      # NEXT_PUBLIC_API_URL = https://nfinamce.onrender.com
+    # O app já usa https://nfinamce.onrender.com quando está em *.onrender.com

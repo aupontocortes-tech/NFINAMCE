@@ -59,26 +59,37 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/04f05b88-2244-43f2-bc12-4e88d10b62fd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth.controller.js:login',message:'login entry',data:{email:email||null,hasPassword:!!password},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E,C'})}).catch(()=>{});
+  // #endregion
+
   if (!email || !password) {
     return res.status(400).json({ error: 'Preencha e-mail e senha.' });
   }
 
   try {
     const user = await db('users').where({ email }).first();
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/04f05b88-2244-43f2-bc12-4e88d10b62fd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth.controller.js:userLookup',message:'user lookup',data:{found:!!user},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     if (!user) {
       return res.status(401).json({ error: 'Credenciais inválidas.' });
     }
 
     const validPassword = await bcrypt.compare(password, user.password);
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/04f05b88-2244-43f2-bc12-4e88d10b62fd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth.controller.js:passwordCheck',message:'password valid',data:{validPassword},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     if (!validPassword) {
       return res.status(401).json({ error: 'Credenciais inválidas.' });
     }
 
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    
-    // Remove password from response
     const { password: _, ...userWithoutPassword } = user;
     res.json({ user: userWithoutPassword, token });
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/04f05b88-2244-43f2-bc12-4e88d10b62fd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth.controller.js:loginSuccess',message:'login 200 sent',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Erro ao fazer login.' });

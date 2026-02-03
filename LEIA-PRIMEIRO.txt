@@ -1,0 +1,53 @@
+========================================
+  COMO VER O APP NO LOCALHOST
+========================================
+
+OPCAO A - Duplo clique (mais facil)
+-----------------------------------
+1. Abra a pasta do projeto no Explorador de Arquivos.
+   (A pasta onde esta este arquivo LEIA-PRIMEIRO.txt)
+
+2. De DUPLO CLIQUE em: iniciar-tudo.bat
+
+3. Vao abrir DUAS janelas pretas (Backend e Frontend).
+   NAO FECHE NENHUMA.
+
+4. Espere na janela "NFinance Frontend" aparecer a palavra "Ready"
+   (pode levar 20 a 40 segundos na primeira vez).
+
+5. O navegador vai abrir sozinho em http://localhost:3000/teste
+   Se nao abrir, abra voce: http://localhost:3000/teste
+
+
+OPCAO B - Dois terminais (se o .bat nao funcionar)
+--------------------------------------------------
+1. Abra o Cursor (ou VS Code) na pasta do projeto.
+
+2. Abra o Terminal (Terminal > New Terminal).
+
+3. No terminal, digite e aperte Enter:
+   npm run dev:backend
+
+4. Espere aparecer: "Servidor V2.1.0 rodando na porta 3001"
+
+5. Abra OUTRO terminal (Terminal > New Terminal de novo).
+
+6. No segundo terminal, digite e aperte Enter:
+   npm run dev:frontend
+
+7. Espere aparecer "Ready" e "Local: http://localhost:3000"
+
+8. No navegador, abra: http://localhost:3000/teste
+
+
+LOGIN (se precisar)
+-------------------
+E-mail: demo@nfinance.com
+Senha:  demo123
+
+
+SE NAO ABRIR
+-------------
+- Confira se as DUAS janelas (backend e frontend) estao abertas.
+- Se a pagina ficar em branco, espere 30 segundos e aperte F5.
+- Se der erro de porta, feche todos os terminais e rode de novo.

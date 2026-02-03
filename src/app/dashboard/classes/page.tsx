@@ -1,11 +1,23 @@
 "use client";
+/**
+ * Agenda Semanal de Aulas
+ *
+ * Regras de negócio:
+ * - Impedir conflitos de horário (não permitir dois alunos no mesmo horário).
+ * - Impedir agendamento em datas passadas.
+ * - Validar conflitos antes de salvar e exibir aviso claro ao usuário.
+ *
+ * UX: poucos cliques, interface visual, uso rápido no dia a dia da personal.
+ * Cada aula aparece como bloco no dia/horário; diferenciação visual recorrente vs pontual.
+ */
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, Dumbbell } from "lucide-react";
+import { Plus, Trash2, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, Dumbbell, Repeat, CalendarDays } from "lucide-react";
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +26,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { getApiUrl } from "@/lib/utils";
+
+/** Verifica se a data (YYYY-MM-DD) é no passado */
+function isDataPassada(dataStr: string): boolean {
+  if (!dataStr) return false;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const [y, m, d] = dataStr.split("-").map(Number);
+  const data = new Date(y, m - 1, d);
+  return data < hoje;
+}
 
 const API = getApiUrl();
 
@@ -25,11 +47,14 @@ interface Aluno {
 interface Aula {
   id: number;
   aluno_id: number;
+  aluno_nome?: string;
   data?: string | null;
   dia_semana?: string | null;
   hora_inicio: string;
   hora_fim: string;
   tipo_treino?: string | null;
+  status?: string | null;
+  tipo_aula?: string | null;
 }
 
 const WEEK_DAYS = [
@@ -46,27 +71,16 @@ const HOURS = Array.from({ length: 18 }, (_, i) => {
   return `${h.toString().padStart(2, "0")}:00`;
 });
 
-// Cores suaves para os cards
-const CARD_COLORS = [
-  "bg-red-50 hover:bg-red-100 border-red-100",
-  "bg-orange-50 hover:bg-orange-100 border-orange-100",
-  "bg-amber-50 hover:bg-amber-100 border-amber-100",
-  "bg-green-50 hover:bg-green-100 border-green-100",
-  "bg-emerald-50 hover:bg-emerald-100 border-emerald-100",
-  "bg-teal-50 hover:bg-teal-100 border-teal-100",
-  "bg-cyan-50 hover:bg-cyan-100 border-cyan-100",
-  "bg-sky-50 hover:bg-sky-100 border-sky-100",
-  "bg-blue-50 hover:bg-blue-100 border-blue-100",
-  "bg-indigo-50 hover:bg-indigo-100 border-indigo-100",
-  "bg-violet-50 hover:bg-violet-100 border-violet-100",
-  "bg-purple-50 hover:bg-purple-100 border-purple-100",
-  "bg-fuchsia-50 hover:bg-fuchsia-100 border-fuchsia-100",
-  "bg-pink-50 hover:bg-pink-100 border-pink-100",
-  "bg-rose-50 hover:bg-rose-100 border-rose-100",
-];
+// Cores por status (Confirmada / Remarcada / Cancelada)
+const STATUS_STYLES: Record<string, string> = {
+  confirmada: "bg-emerald-500 hover:bg-emerald-600 border-emerald-600 text-white",
+  remarcada: "bg-amber-400 hover:bg-amber-500 border-amber-500 text-zinc-900",
+  cancelada: "bg-zinc-300 hover:bg-zinc-400 border-zinc-400 text-zinc-600 line-through",
+};
 
-const getCardColor = (alunoId: number) => {
-  return CARD_COLORS[alunoId % CARD_COLORS.length];
+const getAulaStyle = (a: Aula) => {
+  const status = a.status || "confirmada";
+  return STATUS_STYLES[status] ?? STATUS_STYLES.confirmada;
 };
 
 export default function ClassesPage() {
@@ -104,6 +118,22 @@ export default function ClassesPage() {
       hora_inicio: aula.hora_inicio,
       hora_fim: aula.hora_fim,
       tipo_treino: aula.tipo_treino || "",
+    });
+    setIsNewAulaOpen(true);
+  };
+
+  /** Abre o formulário com dia e horário da célula preenchidos (poucos cliques) */
+  const openFromCell = (dayKey: string, hour: string, date: Date) => {
+    setEditingId(null);
+    const dataStr = format(date, "yyyy-MM-dd");
+    const [h] = hour.split(":").map(Number);
+    const horaFim = `${String((h + 1) % 24).padStart(2, "0")}:00`;
+    setForm({
+      ...initialFormState,
+      dia_semana: dayKey,
+      data: dataStr,
+      hora_inicio: hour,
+      hora_fim: horaFim,
     });
     setIsNewAulaOpen(true);
   };
@@ -160,53 +190,88 @@ export default function ClassesPage() {
   }, [isNewAulaOpen]);
 
   const submit = async () => {
-    // Validações com feedback visual
     if (!form.aluno_id) {
-      alert("Por favor, selecione um aluno.");
+      toast.error("Selecione um aluno.");
       return;
     }
     if (!form.data && !form.dia_semana) {
-      alert("Por favor, selecione um dia da semana (para aulas fixas) ou uma data específica.");
+      toast.error("Informe o dia da semana (recorrente) ou uma data específica.");
       return;
     }
     if (!form.hora_inicio) {
-      alert("Por favor, preencha o horário de início.");
+      toast.error("Informe o horário de início.");
       return;
     }
-    if (!form.hora_fim) {
-      alert("Por favor, preencha o horário de término.");
+
+    // Regra: impedir agendamento em data passada (validação no front também)
+    if (form.data && isDataPassada(form.data)) {
+      toast.error("Não é possível agendar em data passada.");
       return;
     }
 
     setLoading(true);
     try {
+      // Validar conflitos ANTES de salvar e exibir aviso claro ao usuário
+      const conflictParams = new URLSearchParams({ hora_inicio: form.hora_inicio });
+      if (form.data) conflictParams.set("data", form.data);
+      else if (form.dia_semana) conflictParams.set("dia_semana", form.dia_semana);
+      if (editingId) conflictParams.set("excludeAulaId", String(editingId));
+      const conflictRes = await fetch(`${API}/aulas/check-conflict?${conflictParams}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (conflictRes.ok) {
+        const { conflito, aulaConflitante } = await conflictRes.json();
+        if (conflito) {
+          const msg = aulaConflitante?.aluno_nome
+            ? `Já existe aula neste horário para ${aulaConflitante.aluno_nome}. Escolha outro horário ou dia.`
+            : "Já existe outra aula neste horário. Escolha outro horário ou dia.";
+          toast.error(msg);
+          setLoading(false);
+          return;
+        }
+      }
+
       const url = editingId ? `${API}/aulas/${editingId}` : `${API}/aulas`;
       const method = editingId ? "PUT" : "POST";
+      const payload: Record<string, unknown> = {
+        aluno_id: Number(form.aluno_id),
+        data: form.data || null,
+        dia_semana: form.dia_semana || null,
+        hora_inicio: form.hora_inicio,
+        tipo_treino: form.tipo_treino || null,
+      };
+      if (form.hora_fim) payload.hora_fim = form.hora_fim;
+      if (!editingId) {
+        payload.status = "confirmada";
+        payload.tipo_aula = "fixa";
+      }
 
       const res = await fetch(url, {
         method,
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}` 
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          aluno_id: Number(form.aluno_id),
-          data: form.data || null,
-          dia_semana: form.dia_semana || null,
-          hora_inicio: form.hora_inicio,
-          hora_fim: form.hora_fim,
-          tipo_treino: form.tipo_treino || null,
-        }),
+        body: JSON.stringify(payload),
       });
+
       if (res.ok) {
+        toast.success(editingId ? "Aula atualizada." : "Aula agendada.");
         handleOpenChange(false);
         fetchAulas();
       } else {
-        const err = await res.json();
-        alert(`Erro ao salvar: ${err.error || "Tente novamente."}`);
+        const err = await res.json().catch(() => ({}));
+        const msg = err.error || "Erro ao salvar.";
+        if (err.code === "DATA_PASSADA") {
+          toast.error("Não é possível agendar em data passada.");
+        } else if (err.code === "CONFLITO_HORARIO") {
+          toast.error(msg);
+        } else {
+          toast.error(msg);
+        }
       }
-    } catch (error) {
-      alert("Erro de conexão com o servidor.");
+    } catch {
+      toast.error("Erro de conexão. Verifique se o backend está online.");
     } finally {
       setLoading(false);
     }
@@ -231,26 +296,42 @@ export default function ClassesPage() {
     const dateStr = format(date, "yyyy-MM-dd");
     
     return aulas.filter((a) => {
-      const aulaHour = parseInt(a.hora_inicio.split(":")[0]);
+      const aulaHour = parseInt((a.hora_inicio || "").split(":")[0], 10);
       if (aulaHour !== hourInt) return false;
 
-      // Se for aula recorrente
+      // Aula recorrente (sem data): bate pelo dia da semana
       if (a.dia_semana === dayKey && !a.data) return true;
 
-      // Se for aula de data específica
+      // Aula com data específica: bate pela data
       if (a.data === dateStr) return true;
 
+      // Mesmo dia da semana e data da aula na mesma semana da célula (evita erro de fuso)
+      if (a.dia_semana === dayKey && a.data) {
+        const aulaDate = new Date(a.data + "T12:00:00");
+        const cellWeekStart = startOfWeek(date, { weekStartsOn: 1 });
+        const aulaWeekStart = startOfWeek(aulaDate, { weekStartsOn: 1 });
+        if (cellWeekStart.getTime() === aulaWeekStart.getTime()) return true;
+      }
       return false;
     });
   };
 
+  const semDados = !loading && token && alunos.length === 0 && aulas.length === 0;
+
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto">
+      {/* Aviso quando não há dados (ex.: seed não rodou ou login errado) */}
+      {semDados && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800 text-sm">
+          <strong>Nenhum aluno ou aula carregada.</strong> Para ver a agenda com dados de exemplo, faça login com <strong>demo@nfinance.com</strong> / <strong>demo123</strong> e recarregue a página. Se o backend acabou de subir, aguarde alguns segundos e atualize (F5).
+        </div>
+      )}
+
       {/* Header e Controles */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-zinc-200">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Agenda de Aulas</h1>
-          <p className="text-zinc-500 text-sm mt-1">Visão semanal das aulas recorrentes e específicas.</p>
+          <h1 className="text-2xl font-bold text-zinc-900">Agenda Semanal</h1>
+          <p className="text-zinc-500 text-sm mt-1">Horários fixos e remarcações. Cada aula tem duração de 1 hora.</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -274,7 +355,7 @@ export default function ClassesPage() {
             <DialogTrigger asChild>
                 <Button className="gap-2 shadow-sm">
                 <Plus className="w-4 h-4" />
-                Nova Aula
+                + Adicionar Aula +
                 </Button>
             </DialogTrigger>
             <DialogContent>
@@ -316,12 +397,14 @@ export default function ClassesPage() {
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-500">Data Específica (apenas se não for recorrente)</label>
+                    <label className="text-sm font-medium text-zinc-500">Data específica (pontual; deixe vazio para recorrente)</label>
                     <Input 
                     type="date"
                     value={form.data} 
+                    min={format(new Date(), "yyyy-MM-dd")}
                     onChange={(e) => setForm((f) => ({ ...f, data: e.target.value, dia_semana: "" }))} 
                     />
+                    <p className="text-xs text-zinc-400">Datas passadas não são permitidas.</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -400,14 +483,26 @@ export default function ClassesPage() {
                 const isToday = isSameDay(new Date(), date);
 
                 return (
-                  <div key={`${day.key}-${hour}`} className={`min-h-[100px] p-1 border-b border-zinc-100 relative group transition-colors ${isToday ? "bg-blue-50/10" : "hover:bg-zinc-50/50"}`}>
+                  <div
+                    key={`${day.key}-${hour}`}
+                    role={cellAulas.length === 0 ? "button" : undefined}
+                    tabIndex={cellAulas.length === 0 ? 0 : undefined}
+                    onClick={cellAulas.length === 0 ? () => openFromCell(day.key, hour, date) : undefined}
+                    onKeyDown={cellAulas.length === 0 ? (e) => e.key === "Enter" && openFromCell(day.key, hour, date) : undefined}
+                    className={`min-h-[100px] p-1 border-b border-zinc-100 relative group transition-colors ${isToday ? "bg-blue-50/10" : "hover:bg-zinc-50/50"} ${cellAulas.length === 0 ? "cursor-pointer hover:bg-primary/5" : ""}`}
+                  >
                     <div className="flex flex-col gap-1 h-full">
+                      {cellAulas.length === 0 && (
+                        <span className="text-zinc-300 group-hover:text-primary text-center text-xs py-2" aria-label="Adicionar aula">
+                          + Aula
+                        </span>
+                      )}
                       {cellAulas.map((aula) => {
                         const aluno = alunos.find((a) => a.id === aula.aluno_id);
                         return (
                           <div 
                             key={aula.id} 
-                            className={`rounded-md p-2 border shadow-sm text-left relative group/card transition-all hover:shadow-md cursor-pointer ${getCardColor(aula.aluno_id)}`}
+                            className={`rounded-md p-2 border shadow-sm text-left relative group/card transition-all hover:shadow-md cursor-pointer ${getAulaStyle(aula)}`}
                             onClick={() => openEdit(aula)}
                           >
                             <button 
@@ -418,34 +513,43 @@ export default function ClassesPage() {
                                 <Trash2 className="w-3 h-3" />
                             </button>
                             
-                            <div className="flex items-center gap-1.5 mb-1">
-                                <Clock className="w-3 h-3 text-zinc-500" />
-                                <span className="text-[10px] font-medium text-zinc-600">
+                            <div className="flex items-center gap-1.5 mb-1 opacity-90">
+                                <Clock className="w-3 h-3" />
+                                <span className="text-[10px] font-medium">
                                     {aula.hora_inicio} - {aula.hora_fim}
                                 </span>
                             </div>
 
                             <div className="flex items-center gap-1.5 mb-0.5">
-                                <User className="w-3 h-3 text-zinc-500" />
-                                <div className="font-semibold text-xs md:text-sm truncate text-zinc-800 leading-tight">
-                                    {aluno?.nome || "Desconhecido"}
+                                <User className="w-3 h-3 opacity-90" />
+                                <div className="font-semibold text-xs md:text-sm truncate leading-tight">
+                                    {aluno?.nome || aula.aluno_nome || "Desconhecido"}
                                 </div>
                             </div>
                             
                             {aula.tipo_treino && (
-                                <div className="flex items-center gap-1.5 mt-1 pt-1 border-t border-black/5">
-                                    <Dumbbell className="w-3 h-3 text-zinc-400" />
-                                    <div className="text-[10px] text-zinc-600 truncate font-medium">
+                                <div className="flex items-center gap-1.5 mt-1 pt-1 border-t border-black/10">
+                                    <Dumbbell className="w-3 h-3 opacity-80" />
+                                    <div className="text-[10px] truncate font-medium opacity-90">
                                         {aula.tipo_treino}
                                     </div>
                                 </div>
                             )}
 
-                            {aula.data && (
-                                <div className="absolute bottom-1 right-1">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" title="Aula em data específica"></div>
-                                </div>
-                            )}
+                            {/* Diferenciação visual: aula recorrente vs pontual */}
+                            <div className="absolute bottom-1 right-1 flex items-center gap-1">
+                              {aula.data ? (
+                                <span className="flex items-center gap-0.5 text-[10px] font-medium opacity-90" title="Aula pontual (data específica)">
+                                  <CalendarDays className="w-3 h-3" />
+                                  Pontual
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-0.5 text-[10px] font-medium opacity-90" title="Aula recorrente (toda semana)">
+                                  <Repeat className="w-3 h-3" />
+                                  Recorrente
+                                </span>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
@@ -455,6 +559,36 @@ export default function ClassesPage() {
               })}
             </React.Fragment>
           ))}
+        </div>
+      </div>
+
+      {/* Legendas: status e tipo de aula */}
+      <div className="flex flex-wrap items-center gap-6 text-sm text-zinc-600">
+        <div className="flex flex-wrap items-center gap-4">
+          <span className="font-medium text-zinc-700">Status:</span>
+          <span className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-emerald-500" />
+            Confirmada
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-amber-400" />
+            Remarcada
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-zinc-300" />
+            Cancelada
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-4 border-l border-zinc-200 pl-4">
+          <span className="font-medium text-zinc-700">Tipo:</span>
+          <span className="flex items-center gap-1.5">
+            <Repeat className="w-3.5 h-3.5 text-zinc-500" />
+            Recorrente (toda semana)
+          </span>
+          <span className="flex items-center gap-1.5">
+            <CalendarDays className="w-3.5 h-3.5 text-zinc-500" />
+            Pontual (data específica)
+          </span>
         </div>
       </div>
 

@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:backend": "npm run dev --prefix server",
+    "dev:frontend": "next dev",
+    "subir": "concurrently -n backend,frontend -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build": "next build",
     "start": "next start",
     "setup:auth": "node scripts/ensure-auth-secret.js",
@@ -41,6 +44,7 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "concurrently": "^9.1.0",
     "@tailwindcss/postcss": "^4",
     "@types/date-fns": "^2.5.3",
     "@types/node": "^20",

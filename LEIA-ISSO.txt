@@ -1,0 +1,53 @@
+========================================
+  COMO ABRIR O NFINANCE (passo a passo)
+========================================
+
+PASSO 1
+-------
+Abra a pasta onde esta este arquivo (LEIA-ISSO.txt).
+E a pasta que tem dentro:
+  - a pasta "server"
+  - o arquivo "iniciar-tudo.bat"
+  - o arquivo "ABRIR-NFINANCE.bat"
+
+
+PASSO 2
+-------
+De DUPLO CLIQUE no arquivo:
+
+    ABRIR-NFINANCE.bat
+
+(ou, se preferir, em iniciar-tudo.bat)
+
+
+PASSO 3
+-------
+Vao abrir DUAS janelas pretas. NAO FECHE NENHUMA.
+
+Espere ate aparecer a palavra "Ready" em uma delas
+(pode levar 20 a 40 segundos).
+
+
+PASSO 4
+-------
+O navegador vai abrir sozinho.
+
+Se NAO abrir, abra o navegador voce mesmo e digite:
+
+    http://localhost:3000/teste
+
+
+PASSO 5
+-------
+Voce vai entrar direto no app (sem login).
+
+No menu, clique em "Agenda de Aulas" para ver
+os 6 alunos ficticios e a agenda da semana.
+
+
+Se pedir login:
+  E-mail: demo@nfinance.com
+  Senha:  demo123
+
+
+========================================

@@ -5,14 +5,6 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Otimizações para Render
-  output: 'standalone',
-  // Garantir que funciona na Render
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '2mb',
-    },
-  },
 };
 
 export default nextConfig;

@@ -1,0 +1,43 @@
+========================================
+  COMO VER O APP NO LOCALHOST
+========================================
+
+PASSO 1 - Feche tudo
+--------------------
+- Feche TODAS as janelas do Cursor que estejam rodando terminal (npm, node).
+- Feche qualquer navegador que esteja em localhost:3000.
+
+PASSO 2 - Rode o script
+-----------------------
+- Abra a pasta do projeto (njc) no Explorador de Arquivos.
+- De DUPLO CLIQUE em: iniciar-tudo.bat
+- Vao abrir DUAS janelas pretas (Backend e Frontend). NAO FECHE NENHUMA.
+
+PASSO 3 - Espere
+----------------
+- Na janela "NFinance Frontend", espere aparecer a mensagem "Ready" (pode levar 20-30 segundos na primeira vez).
+- So depois disso o app esta no ar.
+
+PASSO 4 - Abra o navegador
+---------------------------
+- Para abrir SEM LOGIN (só pra teste): http://localhost:3000/teste
+- Ou a tela normal: http://localhost:3000 (depois clique em "Abrir para teste")
+
+PASSO 5 - Login
+----------------
+- E-mail: demo@nfinance.com
+- Senha:  demo123
+
+========================================
+Se ainda nao funcionar
+========================================
+1. Abra o Cursor na pasta do projeto.
+2. Abra um terminal (Terminal > New Terminal).
+3. Digite:   cd server
+4. Digite:   npm run dev
+5. Deixe essa janela aberta. Espere aparecer "Servidor rodando na porta 3001".
+6. Abra OUTRO terminal (Terminal > New Terminal).
+7. Digite:   npm run dev
+8. Espere aparecer "Ready" e "Local: http://localhost:3000".
+9. Clique no link http://localhost:3000 ou abra no navegador.
+10. Login: demo@nfinance.com / demo123

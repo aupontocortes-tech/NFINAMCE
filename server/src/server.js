@@ -11,6 +11,7 @@ import { iniciarCron } from './services/cron.service.js';
 import { initSchema } from './data/db.js';
 import { importInitialSpreadsheetIfNeeded } from './services/import.service.js';
 import { runInitialSeed2026 } from './services/seed2026.service.js';
+import { runSeedAgendaFicticia, ensureDemoUser, ensureAlunosFicticios } from './services/seedAgendaFicticia.service.js';
 
 const app = express();
 
@@ -63,6 +64,12 @@ initSchema()
     try {
       // Tenta rodar seed/importação se necessário
       await runInitialSeed2026();
+      // Em desenvolvimento: demo + alunos fictícios para testar a agenda
+      if (!process.env.DATABASE_URL) {
+        await ensureDemoUser();
+        await ensureAlunosFicticios();
+      }
+      await runSeedAgendaFicticia();
     } catch (err) {
       console.error('Erro na inicialização de dados (Seed/Import):', err);
     }
@@ -70,6 +77,9 @@ initSchema()
     // Inicialização - Render usa PORT dinâmico
     const PORT = process.env.PORT || config.port;
     app.listen(PORT, '0.0.0.0', () => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/04f05b88-2244-43f2-bc12-4e88d10b62fd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'server.js:listen',message:'server listening',data:{port:PORT},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,E'})}).catch(()=>{});
+      // #endregion
       console.log(`\n🚀 Servidor V2.1.0 rodando na porta ${PORT}`);
       console.log(`📝 API Alunos: /alunos`);
       console.log(`💚 Health Check: /health`);

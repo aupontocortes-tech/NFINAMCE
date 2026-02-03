@@ -67,7 +67,6 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const apiUrl = getApiUrl();
-      console.log('🔗 Tentando conectar em:', apiUrl);
       const response = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,12 +93,40 @@ export default function LoginPage() {
       if (error instanceof TypeError && error.message.includes('fetch')) {
         const apiUrl = getApiUrl();
         toast.error(`Não foi possível conectar ao servidor em ${apiUrl}. Verifique se o backend está online.`);
-        console.error('❌ Erro de conexão:', error);
-        console.error('📍 URL tentada:', apiUrl);
       } else {
         toast.error(error instanceof Error ? error.message : 'Erro desconhecido ao fazer login');
-        console.error('Erro no login:', error);
       }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /** Entrar sem digitar nada — só pra teste (usa demo@nfinance.com / demo123) */
+  const entrarParaTeste = async () => {
+    setIsLoading(true);
+    try {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'demo@nfinance.com',
+          password: 'demo123',
+        }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || 'Erro ao entrar como demo');
+      }
+
+      const result = await response.json();
+      if (!result.token || !result.user) throw new Error('Resposta inválida');
+
+      login(result.token, result.user);
+      toast.success('Entrando como demo...');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Backend offline? Rode iniciar-tudo.bat');
     } finally {
       setIsLoading(false);
     }
@@ -218,6 +245,16 @@ export default function LoginPage() {
               <p className="text-xs text-zinc-500 text-center">
                 Entrar com Gmail, Facebook ou Twitter e acessar direto o aplicativo.
               </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-11 rounded-lg border-emerald-500/60 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 font-medium"
+                disabled={isLoading}
+                onClick={entrarParaTeste}
+              >
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Abrir para teste (entra direto, sem digitar)
+              </Button>
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t border-zinc-600/60" />
@@ -236,7 +273,11 @@ export default function LoginPage() {
                   Cadastre-se gratuitamente
                 </Link>
               </div>
-              <div className="text-center pt-2">
+              <div className="text-center pt-2 space-y-1">
+                <Link href="/teste" className="text-xs text-emerald-400 hover:text-emerald-300 inline-flex items-center gap-1 font-medium">
+                  Abrir direto (sem digitar) →
+                </Link>
+                <br />
                 <Link href="/app" className="text-xs text-zinc-500 hover:text-zinc-400 inline-flex items-center gap-1">
                   Abrir no celular
                 </Link>
