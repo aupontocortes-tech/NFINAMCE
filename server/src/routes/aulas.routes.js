@@ -7,6 +7,7 @@ const router = Router();
 router.use('/aulas', authenticateToken);
 
 router.get('/aulas', Aulas.list);
+router.get('/aulas/check-conflict', Aulas.checkConflict);
 router.post('/aulas', Aulas.create);
 router.put('/aulas/:id', Aulas.update);
 router.delete('/aulas/:id', Aulas.remove);

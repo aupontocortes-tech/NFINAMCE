@@ -15,7 +15,21 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "NFinance - Gestão para Personal Trainers",
-  description: "Sistema de cobrança automática e gestão de alunos",
+  description: "Sua gestão. Seus alunos. Um só lugar. Gestão e cobrança para personal trainers.",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "NFinance",
+    statusBarStyle: "default",
+  },
+  openGraph: {
+    title: "NFinance - Gestão para Personal Trainers",
+    description: "Sua gestão. Seus alunos. Um só lugar.",
+  },
 };
 
 export const viewport: Viewport = {
@@ -26,6 +40,7 @@ export const viewport: Viewport = {
 
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SessionProvider } from '@/components/SessionProvider';
+import { InstallAppBanner } from '@/components/InstallAppBanner';
 
 export default function RootLayout({
   children,
@@ -41,6 +56,7 @@ export default function RootLayout({
           <AuthProvider>
             {children}
             <Toaster />
+            <InstallAppBanner />
           </AuthProvider>
         </SessionProvider>
       </body>

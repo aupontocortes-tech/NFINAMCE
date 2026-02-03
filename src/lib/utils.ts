@@ -15,9 +15,9 @@ export function getApiUrl() {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     
-    // Se for localhost, usa backend local
+    // Se for localhost, usa backend local no mesmo host (evita mistura localhost vs 127.0.0.1)
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://localhost:3001';
+      return `http://${hostname}:3001`;
     }
     
     // Se estiver na Render (onrender.com), usa backend na Render

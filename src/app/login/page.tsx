@@ -67,27 +67,17 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const apiUrl = getApiUrl();
-      console.log('🔗 Tentando conectar em:', apiUrl);
       const response = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: data.email,
-          password: data.password,
-        }),
+        body: JSON.stringify({ email: data.email, password: data.password }),
       });
-
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
         throw new Error(result.error || `Erro ${response.status}: ${response.statusText}`);
       }
-
       const result = await response.json();
-
-      if (!result.token || !result.user) {
-        throw new Error('Resposta inválida do servidor');
-      }
-
+      if (!result.token || !result.user) throw new Error('Resposta inválida do servidor');
       login(result.token, result.user);
       toast.success('Login realizado com sucesso!');
     } catch (error) {
@@ -236,6 +226,9 @@ export default function LoginPage() {
                   Cadastre-se gratuitamente
                 </Link>
               </div>
+              <p className="text-center text-xs text-zinc-500 pt-1">
+                Testar sem cadastro: <span className="text-zinc-400 font-mono">demo@nfinance.com</span> / <span className="text-zinc-400 font-mono">demo123</span>
+              </p>
               <div className="text-center pt-2">
                 <Link href="/app" className="text-xs text-zinc-500 hover:text-zinc-400 inline-flex items-center gap-1">
                   Abrir no celular

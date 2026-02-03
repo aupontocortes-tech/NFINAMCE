@@ -11,6 +11,7 @@ import { iniciarCron } from './services/cron.service.js';
 import { initSchema } from './data/db.js';
 import { importInitialSpreadsheetIfNeeded } from './services/import.service.js';
 import { runInitialSeed2026 } from './services/seed2026.service.js';
+import { ensureDemoUser } from './services/ensureDemoUser.service.js';
 
 const app = express();
 
@@ -61,7 +62,11 @@ app.use((err, req, res, next) => {
 initSchema()
   .then(async () => {
     try {
-      // Tenta rodar seed/importação se necessário
+      await ensureDemoUser();
+    } catch (err) {
+      console.error('Erro ao garantir usuário demo:', err);
+    }
+    try {
       await runInitialSeed2026();
     } catch (err) {
       console.error('Erro na inicialização de dados (Seed/Import):', err);

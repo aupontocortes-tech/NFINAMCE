@@ -77,6 +77,10 @@ export const initSchema = async () => {
       
       const hasMsg = await db.schema.hasColumn('alunos', 'mensagem_cobranca');
       if (!hasMsg) await db.schema.alterTable('alunos', t => t.string('mensagem_cobranca'));
+      const hasDiasFixos = await db.schema.hasColumn('alunos', 'dias_fixos');
+      if (!hasDiasFixos) await db.schema.alterTable('alunos', t => t.string('dias_fixos'));
+      const hasHoraFixo = await db.schema.hasColumn('alunos', 'hora_fixo_inicio');
+      if (!hasHoraFixo) await db.schema.alterTable('alunos', t => t.string('hora_fixo_inicio'));
     }
 
     // 3. Aulas
@@ -90,12 +94,18 @@ export const initSchema = async () => {
         table.string('hora_fim').notNullable();
         table.float('horas');
         table.string('tipo_treino');
+        table.string('status').defaultTo('confirmada'); // confirmada | remarcada | cancelada
+        table.string('tipo_aula').defaultTo('fixa');     // fixa | remarcada
         table.text('observacoes');
         table.timestamp('created_at').defaultTo(db.fn.now());
       });
     } else {
       const hasData = await db.schema.hasColumn('aulas', 'data');
       if (!hasData) await db.schema.alterTable('aulas', t => t.string('data'));
+      const hasStatus = await db.schema.hasColumn('aulas', 'status');
+      if (!hasStatus) await db.schema.alterTable('aulas', t => t.string('status').defaultTo('confirmada'));
+      const hasTipoAula = await db.schema.hasColumn('aulas', 'tipo_aula');
+      if (!hasTipoAula) await db.schema.alterTable('aulas', t => t.string('tipo_aula').defaultTo('fixa'));
     }
 
     // 4. Pagamentos

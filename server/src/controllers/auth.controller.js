@@ -65,18 +65,10 @@ export const login = async (req, res) => {
 
   try {
     const user = await db('users').where({ email }).first();
-    if (!user) {
-      return res.status(401).json({ error: 'Credenciais inválidas.' });
-    }
-
+    if (!user) return res.status(401).json({ error: 'Credenciais inválidas.' });
     const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
-      return res.status(401).json({ error: 'Credenciais inválidas.' });
-    }
-
+    if (!validPassword) return res.status(401).json({ error: 'Credenciais inválidas.' });
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    
-    // Remove password from response
     const { password: _, ...userWithoutPassword } = user;
     res.json({ user: userWithoutPassword, token });
   } catch (error) {

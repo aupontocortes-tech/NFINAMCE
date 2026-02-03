@@ -8,9 +8,9 @@ export default function PushPage() {
   return (
     <div className="space-y-6 max-w-xl">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-900">Push</h1>
+        <h1 className="text-2xl font-bold text-zinc-900">Notificações</h1>
         <p className="text-sm text-zinc-500 mt-1">
-          Notificações push do NFinance. Você será informado aqui sobre novidades e alertas.
+          Avisos e lembretes do NFinance. Você será informado aqui sobre novidades e alertas.
         </p>
       </div>
 
@@ -20,7 +20,7 @@ export default function PushPage() {
             <Bell className="w-6 h-6" />
           </div>
           <div>
-            <CardTitle className="text-lg">Notificações Push</CardTitle>
+            <CardTitle className="text-lg">Alertas e notificações</CardTitle>
             <Badge variant="secondary" className="text-xs mt-1">
               Em breve
             </Badge>
@@ -36,7 +36,7 @@ export default function PushPage() {
             <li>Resumo diário ou semanal (opcional) de alunos e receita.</li>
           </ul>
           <p className="text-xs text-zinc-400 mt-2">
-            As opções de Push aparecerão nesta página. Você poderá ativar ou desativar cada tipo de notificação.
+            As opções aparecerão nesta página. Você poderá ativar ou desativar cada tipo de notificação.
           </p>
         </CardContent>
       </Card>

@@ -1,7 +1,9 @@
 @echo off
 chcp 65001 >nul
+title NFinance - Rodar no Localhost
+echo.
 echo ========================================
-echo   Iniciando NFinance
+echo   NFinance - Iniciando para localhost
 echo ========================================
 echo.
 
@@ -11,29 +13,29 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3001" ^| findstr "LISTENING
 timeout /t 2 /nobreak >nul
 echo.
 
-echo [1/2] Iniciando Backend (porta 3001)...
+echo [1/2] Iniciando Backend...
 start "NFinance Backend" cmd /k "cd /d %~dp0server && npm start"
-
 timeout /t 5 /nobreak >nul
 
-echo [2/2] Iniciando Frontend (porta 3000)...
+echo [2/2] Iniciando Frontend...
 start "NFinance Frontend" cmd /k "cd /d %~dp0 && npm run dev"
 
 echo.
-echo Aguardando o frontend subir (15 segundos)...
-timeout /t 15 /nobreak >nul
+echo Aguardando o app subir (20 segundos)...
+timeout /t 20 /nobreak >nul
 
+echo.
 echo Abrindo http://localhost:3000 no navegador...
 start http://localhost:3000
 
 echo.
 echo ========================================
-echo   Servidores iniciados!
-echo   App: http://localhost:3000
-echo   Backend: http://localhost:3001
+echo   Pronto!
+echo   Link: http://localhost:3000
+echo   Login: demo@nfinance.com / demo123
 echo ========================================
-echo   Login rapido: demo@nfinance.com / demo123
+echo   NAO FECHE as janelas Backend e Frontend.
+echo   Feche apenas esta janela se quiser.
 echo ========================================
 echo.
-echo Pressione qualquer tecla para fechar esta janela...
-pause >nul
+pause
