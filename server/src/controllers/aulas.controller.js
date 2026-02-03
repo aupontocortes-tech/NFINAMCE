@@ -86,7 +86,7 @@ export const create = async (req, res) => {
     } = req.body;
 
     if (!aluno_id || !hora_inicio) {
-      return res.status(400).json({ error: 'Informe o aluno e o horário de início. A duração da aula é de 1 hora (término automático).' });
+      return res.status(400).json({ error: 'Informe o aluno e o horário de início. A duração é de 1 hora (término automático).' });
     }
 
     // Monta lista de slots: cada um é { dia_semana?, data? }
