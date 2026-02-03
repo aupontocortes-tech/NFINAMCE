@@ -15,14 +15,6 @@ export const create = async (req, res) => {
   try {
     const userId = req.user.id;
     
-    // Verificar limite de 3 alunos
-    const result = await db('alunos').count('* as count').where({ user_id: userId }).first();
-    const count = Number(result.count);
-    
-    if (count >= 3) {
-      return res.status(403).json({ error: 'Limite de 3 alunos atingido no plano gratuito.' });
-    }
-
     const { nome, email, telefone, valor, plano, status, vencimento, customMessage } = req.body;
     
     if (!nome || valor === undefined) {
