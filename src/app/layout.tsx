@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: "NFinance",
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
   },
   openGraph: {
     title: "NFinance - Gestão para Personal Trainers",
